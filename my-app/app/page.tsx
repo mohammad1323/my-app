@@ -3,102 +3,165 @@
 import { useState } from 'react';
 
 export default function Home() {
-  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+  const [hoveredGame, setHoveredGame] = useState<string | null>(null);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 font-sans relative overflow-hidden">
-      {/* Animated background elements */}
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-red-950 to-black font-sans relative overflow-hidden">
+      {/* Casino background pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,215,0,0.1) 10px, rgba(255,215,0,0.1) 20px)`
+        }}></div>
+      </div>
+
+      {/* Animated casino lights */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
+        <div className="absolute top-0 left-1/4 w-64 h-64 bg-red-600/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-yellow-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 right-0 w-96 h-96 bg-green-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      {/* Floating casino chips */}
+      <div className="absolute top-20 left-10 w-16 h-16 bg-red-600 rounded-full border-4 border-white shadow-lg animate-bounce" style={{ animationDelay: '0s' }}>
+        <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl">$</div>
+      </div>
+      <div className="absolute top-40 right-20 w-16 h-16 bg-blue-600 rounded-full border-4 border-white shadow-lg animate-bounce" style={{ animationDelay: '1s' }}>
+        <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl">$</div>
+      </div>
+      <div className="absolute bottom-32 left-20 w-16 h-16 bg-green-600 rounded-full border-4 border-white shadow-lg animate-bounce" style={{ animationDelay: '2s' }}>
+        <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl">$</div>
       </div>
 
       <main className="container mx-auto px-4 py-16 relative z-10">
-        <div className="max-w-3xl mx-auto text-center">
-          {/* Game Title */}
+        <div className="max-w-5xl mx-auto text-center">
+          {/* Casino Title */}
           <div className="mb-12 space-y-4">
-            <h1 className="text-7xl md:text-9xl font-black tracking-tight text-white drop-shadow-2xl animate-fade-in">
-              <span className="bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
-                SPIEL
+            <h1 className="text-6xl md:text-8xl font-black tracking-wider text-white drop-shadow-2xl animate-fade-in">
+              <span className="bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 bg-clip-text text-transparent">
+                CASINO
               </span>
+              <span className="text-red-600 ml-4">ROYAL</span>
             </h1>
-            <div className="h-2 w-32 bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 mx-auto rounded-full"></div>
-            <p className="text-xl md:text-2xl text-purple-200 mt-8 font-light">
-              Bereit für das Abenteuer?
+            <div className="flex items-center justify-center gap-2">
+              <div className="h-1 w-16 bg-gradient-to-r from-transparent via-yellow-400 to-yellow-400"></div>
+              <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+              <div className="h-1 w-32 bg-gradient-to-r from-yellow-400 via-yellow-400 to-transparent"></div>
+            </div>
+            <p className="text-xl md:text-2xl text-yellow-200 mt-8 font-light tracking-wide">
+              Willkommen im exklusiven Casino
             </p>
           </div>
 
-          {/* Main Start Button */}
-          <div className="mb-12">
+          {/* Balance Display */}
+          <div className="mb-12 flex justify-center">
+            <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl px-8 py-4 border-2 border-yellow-500 shadow-2xl">
+              <div className="text-yellow-400 text-sm uppercase tracking-wider mb-1">Guthaben</div>
+              <div className="text-4xl font-bold text-white flex items-center gap-2">
+                <span className="text-yellow-400">€</span>
+                <span>10,000</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Casino Games Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {/* Roulette */}
             <button
-              onMouseEnter={() => setHoveredButton('start')}
-              onMouseLeave={() => setHoveredButton(null)}
-              className="group relative inline-flex items-center justify-center px-12 py-6 text-2xl font-bold text-white bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-purple-500/50 active:scale-95 overflow-hidden"
+              onMouseEnter={() => setHoveredGame('roulette')}
+              onMouseLeave={() => setHoveredGame(null)}
+              className={`group relative overflow-hidden rounded-xl bg-gradient-to-br from-red-900 to-red-800 p-8 border-4 transition-all duration-300 transform ${
+                hoveredGame === 'roulette' ? 'border-yellow-400 scale-110 shadow-2xl shadow-yellow-500/50' : 'border-yellow-600/50 hover:border-yellow-500'
+              }`}
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-              <span className="relative flex items-center gap-3">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                SPIEL STARTEN
-                <svg className="w-6 h-6 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </span>
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
+              <div className="relative z-10">
+                <div className="text-6xl mb-4">🎰</div>
+                <h3 className="text-2xl font-bold text-white mb-2 uppercase tracking-wide">Roulette</h3>
+                <p className="text-red-200 text-sm">Glücksrad drehen</p>
+                <div className="mt-4 w-12 h-12 mx-auto bg-white rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-red-600 rounded-full"></div>
+                </div>
+              </div>
+            </button>
+
+            {/* Blackjack */}
+            <button
+              onMouseEnter={() => setHoveredGame('blackjack')}
+              onMouseLeave={() => setHoveredGame(null)}
+              className={`group relative overflow-hidden rounded-xl bg-gradient-to-br from-green-900 to-green-800 p-8 border-4 transition-all duration-300 transform ${
+                hoveredGame === 'blackjack' ? 'border-yellow-400 scale-110 shadow-2xl shadow-yellow-500/50' : 'border-yellow-600/50 hover:border-yellow-500'
+              }`}
+            >
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
+              <div className="relative z-10">
+                <div className="text-6xl mb-4">🃏</div>
+                <h3 className="text-2xl font-bold text-white mb-2 uppercase tracking-wide">Blackjack</h3>
+                <p className="text-green-200 text-sm">21 erreichen</p>
+                <div className="mt-4 flex justify-center gap-2">
+                  <div className="w-10 h-14 bg-white rounded border-2 border-black flex items-center justify-center text-black font-bold text-lg">A</div>
+                  <div className="w-10 h-14 bg-white rounded border-2 border-black flex items-center justify-center text-red-600 font-bold text-lg">K</div>
+                </div>
+              </div>
+            </button>
+
+            {/* Slots */}
+            <button
+              onMouseEnter={() => setHoveredGame('slots')}
+              onMouseLeave={() => setHoveredGame(null)}
+              className={`group relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-900 to-purple-800 p-8 border-4 transition-all duration-300 transform ${
+                hoveredGame === 'slots' ? 'border-yellow-400 scale-110 shadow-2xl shadow-yellow-500/50' : 'border-yellow-600/50 hover:border-yellow-500'
+              }`}
+            >
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
+              <div className="relative z-10">
+                <div className="text-6xl mb-4">🎲</div>
+                <h3 className="text-2xl font-bold text-white mb-2 uppercase tracking-wide">Slots</h3>
+                <p className="text-purple-200 text-sm">Drehen & Gewinnen</p>
+                <div className="mt-4 flex justify-center gap-1">
+                  <div className="w-8 h-12 bg-yellow-400 rounded border-2 border-yellow-600 flex items-center justify-center text-2xl">🍒</div>
+                  <div className="w-8 h-12 bg-yellow-400 rounded border-2 border-yellow-600 flex items-center justify-center text-2xl">🍋</div>
+                  <div className="w-8 h-12 bg-yellow-400 rounded border-2 border-yellow-600 flex items-center justify-center text-2xl">⭐</div>
+                </div>
+              </div>
+            </button>
+
+            {/* Poker */}
+            <button
+              onMouseEnter={() => setHoveredGame('poker')}
+              onMouseLeave={() => setHoveredGame(null)}
+              className={`group relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-900 to-blue-800 p-8 border-4 transition-all duration-300 transform ${
+                hoveredGame === 'poker' ? 'border-yellow-400 scale-110 shadow-2xl shadow-yellow-500/50' : 'border-yellow-600/50 hover:border-yellow-500'
+              }`}
+            >
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
+              <div className="relative z-10">
+                <div className="text-6xl mb-4">♠️</div>
+                <h3 className="text-2xl font-bold text-white mb-2 uppercase tracking-wide">Poker</h3>
+                <p className="text-blue-200 text-sm">Texas Hold'em</p>
+                <div className="mt-4 flex justify-center gap-1">
+                  <div className="w-8 h-11 bg-white rounded border border-black text-center text-xs pt-1">
+                    <div className="text-red-600 font-bold">A</div>
+                    <div className="text-xs">♠</div>
+                  </div>
+                  <div className="w-8 h-11 bg-white rounded border border-black text-center text-xs pt-1">
+                    <div className="text-black font-bold">K</div>
+                    <div className="text-xs">♠</div>
+                  </div>
+                </div>
+              </div>
             </button>
           </div>
 
-          {/* Game Options */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <button
-              onMouseEnter={() => setHoveredButton('easy')}
-              onMouseLeave={() => setHoveredButton(null)}
-              className={`group relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-md p-6 border-2 transition-all duration-300 ${
-                hoveredButton === 'easy' ? 'border-yellow-400 scale-105 bg-white/20' : 'border-white/30 hover:border-white/50'
-              }`}
-            >
-              <div className="text-4xl mb-3">😊</div>
-              <h3 className="text-xl font-bold text-white mb-2">Leicht</h3>
-              <p className="text-purple-200 text-sm">Für Anfänger</p>
-            </button>
-
-            <button
-              onMouseEnter={() => setHoveredButton('medium')}
-              onMouseLeave={() => setHoveredButton(null)}
-              className={`group relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-md p-6 border-2 transition-all duration-300 ${
-                hoveredButton === 'medium' ? 'border-pink-400 scale-105 bg-white/20' : 'border-white/30 hover:border-white/50'
-              }`}
-            >
-              <div className="text-4xl mb-3">😎</div>
-              <h3 className="text-xl font-bold text-white mb-2">Mittel</h3>
-              <p className="text-purple-200 text-sm">Standard Schwierigkeit</p>
-            </button>
-
-            <button
-              onMouseEnter={() => setHoveredButton('hard')}
-              onMouseLeave={() => setHoveredButton(null)}
-              className={`group relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-md p-6 border-2 transition-all duration-300 ${
-                hoveredButton === 'hard' ? 'border-red-400 scale-105 bg-white/20' : 'border-white/30 hover:border-white/50'
-              }`}
-            >
-              <div className="text-4xl mb-3">🔥</div>
-              <h3 className="text-xl font-bold text-white mb-2">Schwer</h3>
-              <p className="text-purple-200 text-sm">Für Profis</p>
-            </button>
-          </div>
-
-          {/* Additional Options */}
+          {/* Casino Actions */}
           <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <button className="px-6 py-3 rounded-lg bg-white/10 backdrop-blur-md text-white border border-white/30 hover:bg-white/20 hover:border-white/50 transition-all duration-300">
-              ⚙️ Einstellungen
+            <button className="px-8 py-4 rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold border-2 border-yellow-400 hover:from-yellow-500 hover:to-yellow-400 transition-all duration-300 shadow-lg hover:shadow-yellow-500/50 transform hover:scale-105">
+              💰 Einzahlen
             </button>
-            <button className="px-6 py-3 rounded-lg bg-white/10 backdrop-blur-md text-white border border-white/30 hover:bg-white/20 hover:border-white/50 transition-all duration-300">
-              📊 Bestenliste
+            <button className="px-8 py-4 rounded-lg bg-gradient-to-r from-gray-800 to-gray-700 text-yellow-400 font-bold border-2 border-yellow-600/50 hover:border-yellow-500 transition-all duration-300 shadow-lg hover:shadow-yellow-500/30 transform hover:scale-105">
+              📊 Statistiken
             </button>
-            <button className="px-6 py-3 rounded-lg bg-white/10 backdrop-blur-md text-white border border-white/30 hover:bg-white/20 hover:border-white/50 transition-all duration-300">
-              ❓ Hilfe
+            <button className="px-8 py-4 rounded-lg bg-gradient-to-r from-gray-800 to-gray-700 text-yellow-400 font-bold border-2 border-yellow-600/50 hover:border-yellow-500 transition-all duration-300 shadow-lg hover:shadow-yellow-500/30 transform hover:scale-105">
+              🎯 Regeln
             </button>
           </div>
         </div>
@@ -117,12 +180,6 @@ export default function Home() {
         }
         .animate-fade-in {
           animation: fade-in 1s ease-out;
-        }
-        .delay-1000 {
-          animation-delay: 1s;
-        }
-        .delay-2000 {
-          animation-delay: 2s;
         }
       `}</style>
     </div>

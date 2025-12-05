@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Spiel Startseite",
-  description: "Starte dein Spiel",
+  title: "Casino Royal",
+  description: "Willkommen im Casino - Spielen Sie Roulette, Blackjack, Slots und mehr",
 };
 
 export default function RootLayout({
