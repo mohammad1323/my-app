@@ -69,7 +69,7 @@ export default function Home() {
               <span className="bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 bg-clip-text text-transparent">
                 CASINO
               </span>
-              <span className="text-red-600 ml-4">ROYAL</span>
+              <span className="text-red-600 ml-4">HALAL</span>
             </h1>
             <div className="flex items-center justify-center gap-2">
               <div className="h-1 w-16 bg-gradient-to-r from-transparent via-yellow-400 to-yellow-400"></div>
