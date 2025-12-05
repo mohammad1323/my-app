@@ -1,9 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface Statistics {
+  totalRounds: number;
+  wonRounds: number;
+  lostRounds: number;
+  totalWinnings: number;
+  totalLosses: number;
+}
 
 export default function Home() {
   const [hoveredGame, setHoveredGame] = useState<string | null>(null);
+  const [showStats, setShowStats] = useState(false);
+  const [statistics, setStatistics] = useState<Statistics>({
+    totalRounds: 0,
+    wonRounds: 0,
+    lostRounds: 0,
+    totalWinnings: 0,
+    totalLosses: 0,
+  });
+
+  // Load statistics from localStorage on mount
+  useEffect(() => {
+    const savedStats = localStorage.getItem('casinoStatistics');
+    if (savedStats) {
+      setStatistics(JSON.parse(savedStats));
+    }
+  }, []);
+
+  // Save statistics to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('casinoStatistics', JSON.stringify(statistics));
+  }, [statistics]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-red-950 to-black font-sans relative overflow-hidden">
@@ -157,7 +186,10 @@ export default function Home() {
             <button className="px-8 py-4 rounded-lg bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-bold border-2 border-yellow-400 hover:from-yellow-500 hover:to-yellow-400 transition-all duration-300 shadow-lg hover:shadow-yellow-500/50 transform hover:scale-105">
               💰 Einzahlen
             </button>
-            <button className="px-8 py-4 rounded-lg bg-gradient-to-r from-gray-800 to-gray-700 text-yellow-400 font-bold border-2 border-yellow-600/50 hover:border-yellow-500 transition-all duration-300 shadow-lg hover:shadow-yellow-500/30 transform hover:scale-105">
+            <button 
+              onClick={() => setShowStats(true)}
+              className="px-8 py-4 rounded-lg bg-gradient-to-r from-gray-800 to-gray-700 text-yellow-400 font-bold border-2 border-yellow-600/50 hover:border-yellow-500 transition-all duration-300 shadow-lg hover:shadow-yellow-500/30 transform hover:scale-105"
+            >
               📊 Statistiken
             </button>
             <button className="px-8 py-4 rounded-lg bg-gradient-to-r from-gray-800 to-gray-700 text-yellow-400 font-bold border-2 border-yellow-600/50 hover:border-yellow-500 transition-all duration-300 shadow-lg hover:shadow-yellow-500/30 transform hover:scale-105">
@@ -166,6 +198,142 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Statistics Modal */}
+      {showStats && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl border-4 border-yellow-500 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowStats(false)}
+              className="absolute top-4 right-4 w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white font-bold text-xl transition-all duration-300 transform hover:scale-110"
+            >
+              ×
+            </button>
+
+            {/* Modal Content */}
+            <div className="p-8">
+              <h2 className="text-4xl md:text-5xl font-black text-center mb-8 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 bg-clip-text text-transparent">
+                📊 STATISTIKEN
+              </h2>
+
+              {/* Statistics Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                {/* Total Rounds */}
+                <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 rounded-xl p-6 border-2 border-blue-500/50">
+                  <div className="text-blue-300 text-sm uppercase tracking-wider mb-2">Gesamt Runden</div>
+                  <div className="text-4xl font-bold text-white">{statistics.totalRounds}</div>
+                </div>
+
+                {/* Win Rate */}
+                <div className="bg-gradient-to-br from-green-900/50 to-green-800/50 rounded-xl p-6 border-2 border-green-500/50">
+                  <div className="text-green-300 text-sm uppercase tracking-wider mb-2">Gewinnrate</div>
+                  <div className="text-4xl font-bold text-white">
+                    {statistics.totalRounds > 0 
+                      ? `${Math.round((statistics.wonRounds / statistics.totalRounds) * 100)}%`
+                      : '0%'}
+                  </div>
+                </div>
+
+                {/* Won Rounds */}
+                <div className="bg-gradient-to-br from-green-900/50 to-green-800/50 rounded-xl p-6 border-2 border-green-500/50">
+                  <div className="text-green-300 text-sm uppercase tracking-wider mb-2">Gewonnene Runden</div>
+                  <div className="text-4xl font-bold text-green-400">{statistics.wonRounds}</div>
+                </div>
+
+                {/* Lost Rounds */}
+                <div className="bg-gradient-to-br from-red-900/50 to-red-800/50 rounded-xl p-6 border-2 border-red-500/50">
+                  <div className="text-red-300 text-sm uppercase tracking-wider mb-2">Verlorene Runden</div>
+                  <div className="text-4xl font-bold text-red-400">{statistics.lostRounds}</div>
+                </div>
+              </div>
+
+              {/* Financial Statistics */}
+              <div className="space-y-4 mb-6">
+                {/* Total Winnings */}
+                <div className="bg-gradient-to-r from-green-900/70 to-green-800/70 rounded-xl p-6 border-2 border-green-500/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-green-300 text-sm uppercase tracking-wider mb-1">Gesamtgewinne</div>
+                      <div className="text-3xl font-bold text-green-400 flex items-center gap-2">
+                        <span>+€</span>
+                        <span>{statistics.totalWinnings.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                    <div className="text-5xl">💰</div>
+                  </div>
+                </div>
+
+                {/* Total Losses */}
+                <div className="bg-gradient-to-r from-red-900/70 to-red-800/70 rounded-xl p-6 border-2 border-red-500/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-red-300 text-sm uppercase tracking-wider mb-1">Gesamtverluste</div>
+                      <div className="text-3xl font-bold text-red-400 flex items-center gap-2">
+                        <span>-€</span>
+                        <span>{statistics.totalLosses.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                    <div className="text-5xl">💸</div>
+                  </div>
+                </div>
+
+                {/* Net Result */}
+                <div className={`bg-gradient-to-r rounded-xl p-6 border-2 ${
+                  (statistics.totalWinnings - statistics.totalLosses) >= 0
+                    ? 'from-yellow-900/70 to-yellow-800/70 border-yellow-500/50'
+                    : 'from-red-900/70 to-red-800/70 border-red-500/50'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className={`text-sm uppercase tracking-wider mb-1 ${
+                        (statistics.totalWinnings - statistics.totalLosses) >= 0 ? 'text-yellow-300' : 'text-red-300'
+                      }`}>
+                        Netto Ergebnis
+                      </div>
+                      <div className={`text-4xl font-bold flex items-center gap-2 ${
+                        (statistics.totalWinnings - statistics.totalLosses) >= 0 ? 'text-yellow-400' : 'text-red-400'
+                      }`}>
+                        <span>{(statistics.totalWinnings - statistics.totalLosses) >= 0 ? '+' : ''}€</span>
+                        <span>{(statistics.totalWinnings - statistics.totalLosses).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                    <div className="text-5xl">
+                      {(statistics.totalWinnings - statistics.totalLosses) >= 0 ? '🎉' : '📉'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reset Button */}
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => {
+                    if (confirm('Möchten Sie wirklich alle Statistiken zurücksetzen?')) {
+                      setStatistics({
+                        totalRounds: 0,
+                        wonRounds: 0,
+                        lostRounds: 0,
+                        totalWinnings: 0,
+                        totalLosses: 0,
+                      });
+                    }
+                  }}
+                  className="px-6 py-3 rounded-lg bg-gradient-to-r from-red-600 to-red-700 text-white font-bold border-2 border-red-500 hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-lg hover:shadow-red-500/50 transform hover:scale-105"
+                >
+                  🔄 Zurücksetzen
+                </button>
+                <button
+                  onClick={() => setShowStats(false)}
+                  className="px-6 py-3 rounded-lg bg-gradient-to-r from-gray-700 to-gray-800 text-yellow-400 font-bold border-2 border-yellow-600/50 hover:border-yellow-500 transition-all duration-300 shadow-lg hover:shadow-yellow-500/30 transform hover:scale-105"
+                >
+                  Schließen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes fade-in {
