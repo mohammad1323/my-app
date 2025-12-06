@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Casino Royal",
-  description: "Willkommen im Casino - Spielen Sie Roulette, Blackjack, Slots und mehr",
+  title: "Verfolgungsjagd",
+  description: "Entkomme der Polizei in diesem actionreichen Verfolgungsjagd-Spiel",
 };
 
 export default function RootLayout({
