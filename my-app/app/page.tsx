@@ -199,13 +199,13 @@ export default function Home() {
                 <span className="bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 bg-clip-text text-transparent animate-pulse">
                   DODGE
                 </span>
-                <span className="text-yellow-400 ml-4 animate-pulse" style={{ animationDelay: '0.3s' }}>BALL</span>
+                <span className="text-yellow-400 ml-4 animate-pulse" style={{ animationDelay: '0.3s' }}>CAR</span>
               </h1>
               {/* Glow effect behind title */}
               <div className="absolute inset-0 blur-2xl opacity-50">
                 <h1 className="text-7xl md:text-9xl font-black tracking-wider">
                   <span className="text-orange-500/50">DODGE</span>
-                  <span className="text-yellow-400/50 ml-4">BALL</span>
+                  <span className="text-yellow-400/50 ml-4">CAR</span>
                 </h1>
               </div>
             </div>
