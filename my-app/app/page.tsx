@@ -38,24 +38,95 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black font-sans relative overflow-hidden">
-      {/* Animated city skyline background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-gray-800/50 to-transparent">
-          {/* City buildings silhouette */}
-          <svg className="w-full h-full" viewBox="0 0 1200 400" preserveAspectRatio="none">
-            <rect x="0" y="200" width="80" height="200" fill="#1a1a2e" opacity="0.8"/>
-            <rect x="100" y="150" width="100" height="250" fill="#1a1a2e" opacity="0.8"/>
-            <rect x="220" y="180" width="70" height="220" fill="#1a1a2e" opacity="0.8"/>
-            <rect x="310" y="120" width="90" height="280" fill="#1a1a2e" opacity="0.8"/>
-            <rect x="420" y="160" width="80" height="240" fill="#1a1a2e" opacity="0.8"/>
-            <rect x="520" y="140" width="110" height="260" fill="#1a1a2e" opacity="0.8"/>
-            <rect x="650" y="170" width="75" height="230" fill="#1a1a2e" opacity="0.8"/>
-            <rect x="745" y="100" width="95" height="300" fill="#1a1a2e" opacity="0.8"/>
-            <rect x="860" y="180" width="85" height="220" fill="#1a1a2e" opacity="0.8"/>
-            <rect x="965" y="150" width="100" height="250" fill="#1a1a2e" opacity="0.8"/>
-            <rect x="1085" y="190" width="70" height="210" fill="#1a1a2e" opacity="0.8"/>
+      {/* Enhanced animated city skyline background */}
+      <div className="absolute inset-0 opacity-25">
+        <div className="absolute bottom-0 left-0 right-0 h-2/5 bg-gradient-to-t from-gray-800/60 via-gray-700/40 to-transparent">
+          {/* City buildings silhouette with windows */}
+          <svg className="w-full h-full" viewBox="0 0 1200 400" preserveAspectRatio="none" style={{
+            animation: 'cityGlow 8s ease-in-out infinite'
+          }}>
+            {/* Buildings with varying heights and windows */}
+            <g opacity="0.9">
+              <rect x="0" y="200" width="80" height="200" fill="#1a1a2e"/>
+              <rect x="5" y="220" width="12" height="15" fill="#ffd700" opacity="0.6"/>
+              <rect x="25" y="240" width="12" height="15" fill="#ffd700" opacity="0.4"/>
+              <rect x="45" y="220" width="12" height="15" fill="#ffd700" opacity="0.5"/>
+              <rect x="65" y="260" width="12" height="15" fill="#ffd700" opacity="0.3"/>
+              
+              <rect x="100" y="150" width="100" height="250" fill="#1a1a2e"/>
+              <rect x="110" y="170" width="15" height="18" fill="#ffd700" opacity="0.7"/>
+              <rect x="135" y="190" width="15" height="18" fill="#ffd700" opacity="0.5"/>
+              <rect x="160" y="170" width="15" height="18" fill="#ffd700" opacity="0.6"/>
+              <rect x="110" y="220" width="15" height="18" fill="#ffd700" opacity="0.4"/>
+              <rect x="135" y="240" width="15" height="18" fill="#ffd700" opacity="0.5"/>
+              
+              <rect x="220" y="180" width="70" height="220" fill="#1a1a2e"/>
+              <rect x="230" y="200" width="12" height="15" fill="#ffd700" opacity="0.5"/>
+              <rect x="250" y="220" width="12" height="15" fill="#ffd700" opacity="0.4"/>
+              <rect x="270" y="200" width="12" height="15" fill="#ffd700" opacity="0.6"/>
+              
+              <rect x="310" y="120" width="90" height="280" fill="#1a1a2e"/>
+              <rect x="325" y="140" width="15" height="18" fill="#ffd700" opacity="0.7"/>
+              <rect x="350" y="160" width="15" height="18" fill="#ffd700" opacity="0.6"/>
+              <rect x="375" y="140" width="15" height="18" fill="#ffd700" opacity="0.5"/>
+              <rect x="325" y="190" width="15" height="18" fill="#ffd700" opacity="0.4"/>
+              
+              <rect x="420" y="160" width="80" height="240" fill="#1a1a2e"/>
+              <rect x="435" y="180" width="12" height="15" fill="#ffd700" opacity="0.6"/>
+              <rect x="455" y="200" width="12" height="15" fill="#ffd700" opacity="0.5"/>
+              <rect x="475" y="180" width="12" height="15" fill="#ffd700" opacity="0.4"/>
+              
+              <rect x="520" y="140" width="110" height="260" fill="#1a1a2e"/>
+              <rect x="540" y="160" width="15" height="18" fill="#ffd700" opacity="0.7"/>
+              <rect x="570" y="180" width="15" height="18" fill="#ffd700" opacity="0.6"/>
+              <rect x="600" y="160" width="15" height="18" fill="#ffd700" opacity="0.5"/>
+              <rect x="540" y="210" width="15" height="18" fill="#ffd700" opacity="0.4"/>
+              
+              <rect x="650" y="170" width="75" height="230" fill="#1a1a2e"/>
+              <rect x="665" y="190" width="12" height="15" fill="#ffd700" opacity="0.5"/>
+              <rect x="685" y="210" width="12" height="15" fill="#ffd700" opacity="0.4"/>
+              <rect x="705" y="190" width="12" height="15" fill="#ffd700" opacity="0.6"/>
+              
+              <rect x="745" y="100" width="95" height="300" fill="#1a1a2e"/>
+              <rect x="760" y="120" width="15" height="18" fill="#ffd700" opacity="0.8"/>
+              <rect x="785" y="140" width="15" height="18" fill="#ffd700" opacity="0.7"/>
+              <rect x="810" y="120" width="15" height="18" fill="#ffd700" opacity="0.6"/>
+              <rect x="760" y="170" width="15" height="18" fill="#ffd700" opacity="0.5"/>
+              <rect x="785" y="190" width="15" height="18" fill="#ffd700" opacity="0.4"/>
+              
+              <rect x="860" y="180" width="85" height="220" fill="#1a1a2e"/>
+              <rect x="875" y="200" width="12" height="15" fill="#ffd700" opacity="0.6"/>
+              <rect x="895" y="220" width="12" height="15" fill="#ffd700" opacity="0.5"/>
+              <rect x="915" y="200" width="12" height="15" fill="#ffd700" opacity="0.4"/>
+              
+              <rect x="965" y="150" width="100" height="250" fill="#1a1a2e"/>
+              <rect x="980" y="170" width="15" height="18" fill="#ffd700" opacity="0.7"/>
+              <rect x="1005" y="190" width="15" height="18" fill="#ffd700" opacity="0.6"/>
+              <rect x="1030" y="170" width="15" height="18" fill="#ffd700" opacity="0.5"/>
+              
+              <rect x="1085" y="190" width="70" height="210" fill="#1a1a2e"/>
+              <rect x="1095" y="210" width="12" height="15" fill="#ffd700" opacity="0.5"/>
+              <rect x="1115" y="230" width="12" height="15" fill="#ffd700" opacity="0.4"/>
+              <rect x="1135" y="210" width="12" height="15" fill="#ffd700" opacity="0.6"/>
+            </g>
           </svg>
         </div>
+      </div>
+      
+      {/* Moving traffic lights in background */}
+      <div className="absolute bottom-0 left-0 right-0 h-1/4 overflow-hidden">
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-2 h-8 bg-red-500 rounded-full opacity-60"
+            style={{
+              left: `${20 + i * 20}%`,
+              bottom: '10%',
+              animation: `trafficLight ${3 + i}s ease-in-out infinite`,
+              animationDelay: `${i * 0.5}s`
+            }}
+          ></div>
+        ))}
       </div>
 
       {/* Blurred background game */}
@@ -463,6 +534,28 @@ export default function Home() {
             transform: scale(1.5);
           }
         }
+        @keyframes cityGlow {
+          0%, 100% {
+            filter: brightness(1);
+          }
+          50% {
+            filter: brightness(1.2);
+          }
+        }
+        @keyframes trafficLight {
+          0%, 40% {
+            background-color: #ff0000;
+            opacity: 0.8;
+          }
+          50%, 90% {
+            background-color: #00ff00;
+            opacity: 0.6;
+          }
+          100% {
+            background-color: #ff0000;
+            opacity: 0.8;
+          }
+        }
         .animate-fade-in {
           animation: fade-in 1s ease-out;
         }
@@ -646,23 +739,30 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size
+    // Set canvas size (viewport)
     canvas.width = 800;
     canvas.height = 600;
 
-    // Initialize player
-    playerRef.current = { x: 400, y: 300, angle: 0, speed: 0, vx: 0, vy: 0, boostActive: false, boostTimeLeft: 0 };
+    // World size (much larger than viewport for open city)
+    const worldWidth = 2400;
+    const worldHeight = 2400;
+
+    // Camera state
+    const cameraRef = useRef({ x: 0, y: 0 });
+
+    // Initialize player in center of world
+    playerRef.current = { x: worldWidth / 2, y: worldHeight / 2, angle: 0, speed: 0, vx: 0, vy: 0, boostActive: false, boostTimeLeft: 0 };
     playerHistoryRef.current = [];
     boostsRef.current = [];
 
-    // Initialize buildings (city blocks)
+    // Initialize buildings (city blocks) - more buildings in larger world
     buildingsRef.current = [];
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 50; i++) {
       buildingsRef.current.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        width: 60 + Math.random() * 80,
-        height: 60 + Math.random() * 100,
+        x: Math.random() * worldWidth,
+        y: Math.random() * worldHeight,
+        width: 60 + Math.random() * 100,
+        height: 60 + Math.random() * 120,
       });
     }
 
@@ -670,13 +770,13 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     policeRef.current = [];
     for (let i = 0; i < policeCount; i++) {
       policeRef.current.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
+        x: Math.random() * worldWidth,
+        y: Math.random() * worldHeight,
         angle: Math.random() * Math.PI * 2,
         speed: 0,
         targetAngle: 0,
-        acceleration: 0.15 + Math.random() * 0.1,
-        maxSpeed: 3 + Math.random() * 1.5, // Speed increases over time in game loop
+        acceleration: 0.2 + Math.random() * 0.15, // Faster acceleration
+        maxSpeed: 4 + Math.random() * 2, // Faster base speed
       });
     }
 
@@ -711,15 +811,23 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
 
       // Spawn boost items (every 8-12 seconds, max 3 on screen)
       if (Math.random() < 0.003 && boostsRef.current.filter(b => !b.collected).length < 3) {
-        // Make sure boost doesn't spawn on buildings
+        // Make sure boost doesn't spawn on buildings - spawn in world coordinates
         let validPosition = false;
         let boostX = 0;
         let boostY = 0;
         let attempts = 0;
         
         while (!validPosition && attempts < 20) {
-          boostX = 50 + Math.random() * (canvas.width - 100);
-          boostY = 50 + Math.random() * (canvas.height - 100);
+          // Spawn near player but not too close
+          const spawnDistance = 150 + Math.random() * 200;
+          const spawnAngle = Math.random() * Math.PI * 2;
+          boostX = player.x + Math.cos(spawnAngle) * spawnDistance;
+          boostY = player.y + Math.sin(spawnAngle) * spawnDistance;
+          
+          // Keep within world bounds
+          boostX = Math.max(50, Math.min(worldWidth - 50, boostX));
+          boostY = Math.max(50, Math.min(worldHeight - 50, boostY));
+          
           validPosition = true;
           
           // Check if position is clear of buildings
@@ -757,14 +865,17 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       // Spawn more police cars over time
       const targetPoliceCount = 1 + Math.floor(elapsed / 10);
       if (targetPoliceCount > policeRef.current.length && policeRef.current.length < 8) {
+        // Spawn near player but not too close
+        const spawnDistance = 200 + Math.random() * 300;
+        const spawnAngle = Math.random() * Math.PI * 2;
         policeRef.current.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
+          x: player.x + Math.cos(spawnAngle) * spawnDistance,
+          y: player.y + Math.sin(spawnAngle) * spawnDistance,
           angle: Math.random() * Math.PI * 2,
           speed: 0,
           targetAngle: 0,
-          acceleration: 0.15 + Math.random() * 0.1,
-          maxSpeed: 3 + Math.random() * 1.5 + (elapsed * 0.1),
+          acceleration: 0.2 + Math.random() * 0.15,
+          maxSpeed: 4 + Math.random() * 2 + (elapsed * 0.15),
         });
         setPoliceCount(policeRef.current.length);
       }
@@ -775,25 +886,25 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       let rotation = 0;
 
       if (keysRef.current['ArrowUp'] || keysRef.current['w'] || keysRef.current['W']) {
-        acceleration = 0.2;
+        acceleration = 0.3; // Faster acceleration
       }
       if (keysRef.current['ArrowDown'] || keysRef.current['s'] || keysRef.current['S']) {
-        acceleration = -0.15;
+        acceleration = -0.2; // Faster reverse
       }
       if (keysRef.current['ArrowLeft'] || keysRef.current['a'] || keysRef.current['A']) {
-        rotation = -0.1;
+        rotation = -0.12; // Faster turning
       }
       if (keysRef.current['ArrowRight'] || keysRef.current['d'] || keysRef.current['D']) {
-        rotation = 0.1;
+        rotation = 0.12; // Faster turning
       }
 
       player.angle += rotation;
       player.speed += acceleration;
-      player.speed *= 0.95; // Friction
+      player.speed *= 0.96; // Less friction for faster movement
       
-      // Apply boost speed multiplier
-      const maxSpeed = player.boostActive ? 8 : 5; // Boost doubles max speed
-      const minSpeed = player.boostActive ? -6 : -4;
+      // Apply boost speed multiplier - increased speeds
+      const maxSpeed = player.boostActive ? 12 : 8; // Much faster
+      const minSpeed = player.boostActive ? -8 : -6;
       player.speed = Math.max(minSpeed, Math.min(maxSpeed, player.speed));
 
       player.x += Math.cos(player.angle) * player.speed;
@@ -824,16 +935,29 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       // Remove old collected boosts
       boostsRef.current = boostsRef.current.filter(b => !b.collected || Date.now() - b.id < 1000);
 
-      // Wrap around screen
-      if (player.x < 0) player.x = canvas.width;
-      if (player.x > canvas.width) player.x = 0;
-      if (player.y < 0) player.y = canvas.height;
-      if (player.y > canvas.height) player.y = 0;
+      // Keep player within world bounds (no wrap around - open city)
+      const margin = 50;
+      if (player.x < margin) player.x = margin;
+      if (player.x > worldWidth - margin) player.x = worldWidth - margin;
+      if (player.y < margin) player.y = margin;
+      if (player.y > worldHeight - margin) player.y = worldHeight - margin;
+
+      // Update camera to follow player smoothly
+      const targetCameraX = player.x - canvas.width / 2;
+      const targetCameraY = player.y - canvas.height / 2;
+      
+      // Smooth camera movement
+      cameraRef.current.x += (targetCameraX - cameraRef.current.x) * 0.1;
+      cameraRef.current.y += (targetCameraY - cameraRef.current.y) * 0.1;
+      
+      // Keep camera within world bounds
+      cameraRef.current.x = Math.max(0, Math.min(worldWidth - canvas.width, cameraRef.current.x));
+      cameraRef.current.y = Math.max(0, Math.min(worldHeight - canvas.height, cameraRef.current.y));
 
       // Update police cars with smarter AI
       policeRef.current.forEach((police, index) => {
         // Update max speed based on elapsed time (gets faster over time)
-        police.maxSpeed = 3 + Math.random() * 1.5 + (elapsed * 0.15);
+        police.maxSpeed = 4 + Math.random() * 2 + (elapsed * 0.2); // Faster police
         
         // Calculate direct distance to player
         const dx = player.x - police.x;
@@ -943,85 +1067,101 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         }
       });
 
-      // Draw
-      ctx.fillStyle = '#1a1a2e';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Apply camera transform
+      ctx.save();
+      ctx.translate(-cameraRef.current.x, -cameraRef.current.y);
 
-      // Draw road grid
+      // Draw world background
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, worldWidth, worldHeight);
+
+      // Draw road grid in world coordinates
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 2;
-      for (let i = 0; i < canvas.width; i += 100) {
+      for (let i = 0; i < worldWidth; i += 100) {
         ctx.beginPath();
         ctx.moveTo(i, 0);
-        ctx.lineTo(i, canvas.height);
+        ctx.lineTo(i, worldHeight);
         ctx.stroke();
       }
-      for (let i = 0; i < canvas.height; i += 100) {
+      for (let i = 0; i < worldHeight; i += 100) {
         ctx.beginPath();
         ctx.moveTo(0, i);
-        ctx.lineTo(canvas.width, i);
+        ctx.lineTo(worldWidth, i);
         ctx.stroke();
       }
 
-      // Draw buildings
+      // Draw buildings (only those in view)
       ctx.fillStyle = '#2c3e50';
       buildingsRef.current.forEach(building => {
-        ctx.fillRect(building.x, building.y, building.width, building.height);
-        ctx.strokeStyle = '#34495e';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(building.x, building.y, building.width, building.height);
-        
-        // Add windows to buildings
-        ctx.fillStyle = '#34495e';
-        for (let wx = building.x + 10; wx < building.x + building.width - 10; wx += 15) {
-          for (let wy = building.y + 10; wy < building.y + building.height - 10; wy += 15) {
-            if (Math.random() > 0.3) {
-              ctx.fillRect(wx, wy, 8, 10);
+        // Only draw if building is in camera view (with margin)
+        if (building.x + building.width >= cameraRef.current.x - 100 &&
+            building.x <= cameraRef.current.x + canvas.width + 100 &&
+            building.y + building.height >= cameraRef.current.y - 100 &&
+            building.y <= cameraRef.current.y + canvas.height + 100) {
+          ctx.fillRect(building.x, building.y, building.width, building.height);
+          ctx.strokeStyle = '#34495e';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(building.x, building.y, building.width, building.height);
+          
+          // Add windows to buildings
+          ctx.fillStyle = '#34495e';
+          for (let wx = building.x + 10; wx < building.x + building.width - 10; wx += 15) {
+            for (let wy = building.y + 10; wy < building.y + building.height - 10; wy += 15) {
+              if (Math.random() > 0.3) {
+                ctx.fillRect(wx, wy, 8, 10);
+              }
             }
           }
+          ctx.fillStyle = '#2c3e50';
         }
-        ctx.fillStyle = '#2c3e50';
       });
 
-      // Draw boost items
+      // Draw boost items (only those in view)
       boostsRef.current.forEach(boost => {
         if (!boost.collected) {
-          const pulse = Math.sin(Date.now() / 200) * 0.3 + 0.7;
-          
-          // Glow effect
-          ctx.shadowBlur = 20;
-          ctx.shadowColor = '#00ff00';
-          
-          // Outer glow
-          ctx.fillStyle = `rgba(0, 255, 0, ${0.3 * pulse})`;
-          ctx.beginPath();
-          ctx.arc(boost.x, boost.y, 20, 0, Math.PI * 2);
-          ctx.fill();
-          
-          // Boost icon (lightning bolt)
-          ctx.save();
-          ctx.translate(boost.x, boost.y);
-          ctx.rotate(Date.now() / 1000);
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = '#ffff00';
-          ctx.strokeStyle = '#00ff00';
-          ctx.lineWidth = 3;
-          
-          // Draw lightning bolt
-          ctx.beginPath();
-          ctx.moveTo(-8, -15);
-          ctx.lineTo(2, -5);
-          ctx.lineTo(-2, -5);
-          ctx.lineTo(8, 15);
-          ctx.lineTo(-2, 5);
-          ctx.lineTo(2, 5);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-          
-          ctx.restore();
-          
-          ctx.shadowBlur = 0;
+          // Only draw if boost is in camera view
+          if (boost.x >= cameraRef.current.x - 50 &&
+              boost.x <= cameraRef.current.x + canvas.width + 50 &&
+              boost.y >= cameraRef.current.y - 50 &&
+              boost.y <= cameraRef.current.y + canvas.height + 50) {
+            const pulse = Math.sin(Date.now() / 200) * 0.3 + 0.7;
+            
+            // Glow effect
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#00ff00';
+            
+            // Outer glow
+            ctx.fillStyle = `rgba(0, 255, 0, ${0.3 * pulse})`;
+            ctx.beginPath();
+            ctx.arc(boost.x, boost.y, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Boost icon (lightning bolt)
+            ctx.save();
+            ctx.translate(boost.x, boost.y);
+            ctx.rotate(Date.now() / 1000);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ffff00';
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 3;
+            
+            // Draw lightning bolt
+            ctx.beginPath();
+            ctx.moveTo(-8, -15);
+            ctx.lineTo(2, -5);
+            ctx.lineTo(-2, -5);
+            ctx.lineTo(8, 15);
+            ctx.lineTo(-2, 5);
+            ctx.lineTo(2, 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            ctx.shadowBlur = 0;
+          }
         }
       });
 
@@ -1040,8 +1180,13 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         ctx.closePath();
       };
 
-      // Draw police cars - enhanced
+      // Draw police cars - enhanced (only those in view)
       policeRef.current.forEach(police => {
+        // Only draw if police is in camera view
+        if (police.x >= cameraRef.current.x - 50 &&
+            police.x <= cameraRef.current.x + canvas.width + 50 &&
+            police.y >= cameraRef.current.y - 50 &&
+            police.y <= cameraRef.current.y + canvas.height + 50) {
         ctx.save();
         ctx.translate(police.x, police.y);
         ctx.rotate(police.angle);
@@ -1155,6 +1300,7 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         ctx.fillRect(15, 1, 3, 3);
         
         ctx.restore();
+        }
       });
 
       // Draw player car with boost effect
@@ -1277,6 +1423,9 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         ctx.fillRect(17, 3, 3, 1);
       }
       
+      ctx.restore();
+
+      // Restore camera transform
       ctx.restore();
 
       gameLoopRef.current = requestAnimationFrame(gameLoop);
