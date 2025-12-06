@@ -14,6 +14,7 @@ export default function Home() {
   const [hoveredGame, setHoveredGame] = useState<string | null>(null);
   const [showStats, setShowStats] = useState(false);
   const [showGame, setShowGame] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [statistics, setStatistics] = useState<Statistics>({
     totalRounds: 0,
     wonRounds: 0,
@@ -109,27 +110,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Game Info Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-gradient-to-br from-red-900/50 to-red-800/50 rounded-xl p-6 border-2 border-red-500/50 backdrop-blur-sm">
-              <div className="text-5xl mb-3">⭐</div>
-              <h3 className="text-xl font-bold text-white mb-2">Sterne sammeln</h3>
-              <p className="text-red-200 text-sm">Je länger du überlebst, desto mehr Sterne bekommst du</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 rounded-xl p-6 border-2 border-blue-500/50 backdrop-blur-sm">
-              <div className="text-5xl mb-3">🚓</div>
-              <h3 className="text-xl font-bold text-white mb-2">Polizei entkommen</h3>
-              <p className="text-blue-200 text-sm">Mehr Polizeiautos erscheinen über Zeit</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-gray-800/50 to-gray-700/50 rounded-xl p-6 border-2 border-gray-500/50 backdrop-blur-sm">
-              <div className="text-5xl mb-3">🎮</div>
-              <h3 className="text-xl font-bold text-white mb-2">Steuerung</h3>
-              <p className="text-gray-300 text-sm">Pfeiltasten oder WASD zum Fahren</p>
-            </div>
-          </div>
-
           {/* Action Buttons */}
           <div className="flex flex-wrap justify-center gap-4 mt-8">
             <button 
@@ -138,12 +118,98 @@ export default function Home() {
             >
               📊 Statistiken
             </button>
-            <button className="px-8 py-4 rounded-lg bg-gradient-to-r from-gray-800 to-gray-700 text-white font-bold border-2 border-gray-500 hover:border-gray-400 transition-all duration-300 shadow-lg hover:shadow-gray-500/30 transform hover:scale-105">
+            <button 
+              onClick={() => setShowInstructions(true)}
+              className="px-8 py-4 rounded-lg bg-gradient-to-r from-gray-800 to-gray-700 text-white font-bold border-2 border-gray-500 hover:border-gray-400 transition-all duration-300 shadow-lg hover:shadow-gray-500/30 transform hover:scale-105"
+            >
               🎯 Anleitung
             </button>
           </div>
         </div>
       </main>
+
+      {/* Instructions Modal */}
+      {showInstructions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl border-4 border-red-500 shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowInstructions(false)}
+              className="absolute top-4 right-4 w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white font-bold text-xl transition-all duration-300 transform hover:scale-110"
+            >
+              ×
+            </button>
+
+            {/* Modal Content */}
+            <div className="p-8">
+              <h2 className="text-4xl md:text-5xl font-black text-center mb-8 bg-gradient-to-r from-red-500 via-red-400 to-blue-500 bg-clip-text text-transparent">
+                🎯 ANLEITUNG
+              </h2>
+
+              {/* Instructions Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
+                <div className="bg-gradient-to-br from-yellow-900/50 to-yellow-800/50 rounded-xl p-6 border-2 border-yellow-500/50 backdrop-blur-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="text-5xl">⭐</div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white mb-2">Sterne sammeln</h3>
+                      <p className="text-yellow-200 text-base">
+                        Je länger du der Polizei entkommst, desto mehr Sterne sammelst du. 
+                        Alle 5 Sekunden erhältst du einen Stern. Dein Ziel ist es, so viele Sterne wie möglich zu sammeln!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 rounded-xl p-6 border-2 border-blue-500/50 backdrop-blur-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="text-5xl">🚓</div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white mb-2">Polizei entkommen</h3>
+                      <p className="text-blue-200 text-base">
+                        Die Polizei verfolgt dich! Je länger du überlebst, desto mehr Polizeiautos erscheinen. 
+                        Alle 10 Sekunden kommt ein neues Polizeiauto hinzu (maximal 8). 
+                        Vermeide Kollisionen mit den Polizeiautos, sonst wirst du gefangen!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-gray-800/50 to-gray-700/50 rounded-xl p-6 border-2 border-gray-500/50 backdrop-blur-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="text-5xl">🎮</div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white mb-2">Steuerung</h3>
+                      <div className="text-gray-300 text-base space-y-2">
+                        <p className="font-semibold mb-2">Verwende die Pfeiltasten oder WASD:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-2">
+                          <li><span className="font-bold">↑ / W</span> - Beschleunigen</li>
+                          <li><span className="font-bold">↓ / S</span> - Bremsen / Rückwärts</li>
+                          <li><span className="font-bold">← / A</span> - Nach links lenken</li>
+                          <li><span className="font-bold">→ / D</span> - Nach rechts lenken</li>
+                        </ul>
+                        <p className="mt-3 text-sm text-gray-400">
+                          Tipp: Nutze die Gebäude als Deckung und bewege dich schnell, um der Polizei zu entkommen!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setShowInstructions(false)}
+                  className="px-8 py-3 rounded-lg bg-gradient-to-r from-gray-700 to-gray-800 text-white font-bold border-2 border-gray-500 hover:border-gray-400 transition-all duration-300 shadow-lg hover:shadow-gray-500/30 transform hover:scale-105"
+                >
+                  Schließen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Chase Game */}
       {showGame && (
@@ -489,23 +555,71 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         ctx.strokeRect(building.x, building.y, building.width, building.height);
       });
 
+      // Helper function to draw rounded rectangle
+      const drawRoundedRect = (x: number, y: number, width: number, height: number, radius: number) => {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+      };
+
       // Draw police cars
       policeRef.current.forEach(police => {
         ctx.save();
         ctx.translate(police.x, police.y);
         ctx.rotate(police.angle);
         
-        // Police car body
-        ctx.fillStyle = '#0066cc';
-        ctx.fillRect(-15, -8, 30, 16);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-10, -6, 20, 12);
+        // Shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(-14, 10, 28, 8);
         
-        // Police lights
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(-12, -10, 6, 4);
-        ctx.fillStyle = '#0000ff';
-        ctx.fillRect(6, -10, 6, 4);
+        // Police car body (main)
+        ctx.fillStyle = '#1a4d8c';
+        drawRoundedRect(-18, -10, 36, 20, 4);
+        ctx.fill();
+        
+        // White stripe
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-16, -8, 32, 4);
+        ctx.fillRect(-16, 4, 32, 4);
+        
+        // Windows
+        ctx.fillStyle = '#87ceeb';
+        ctx.fillRect(-12, -6, 24, 8);
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-12, -6, 24, 8);
+        
+        // Police lights bar (animated)
+        const lightTime = Date.now() % 1000;
+        if (lightTime < 500) {
+          ctx.fillStyle = '#ff0000';
+          ctx.fillRect(-14, -14, 7, 4);
+        } else {
+          ctx.fillStyle = '#0000ff';
+          ctx.fillRect(7, -14, 7, 4);
+        }
+        
+        // Wheels
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(-16, -12, 6, 4);
+        ctx.fillRect(10, -12, 6, 4);
+        ctx.fillRect(-16, 8, 6, 4);
+        ctx.fillRect(10, 8, 6, 4);
+        
+        // Wheel rims
+        ctx.fillStyle = '#666';
+        ctx.fillRect(-15, -11, 4, 2);
+        ctx.fillRect(11, -11, 4, 2);
+        ctx.fillRect(-15, 9, 4, 2);
+        ctx.fillRect(11, 9, 4, 2);
         
         ctx.restore();
       });
@@ -515,15 +629,57 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       ctx.translate(player.x, player.y);
       ctx.rotate(player.angle);
       
-      // Player car body
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(-15, -8, 30, 16);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(-10, -6, 20, 12);
+      // Shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.fillRect(-14, 10, 28, 8);
+      
+      // Player car body (main)
+      ctx.fillStyle = '#c0392b';
+      drawRoundedRect(-18, -10, 36, 20, 4);
+      ctx.fill();
+      
+      // Car details - hood
+      ctx.fillStyle = '#a93226';
+      ctx.fillRect(-18, -10, 36, 6);
       
       // Windows
       ctx.fillStyle = '#3498db';
-      ctx.fillRect(-8, -4, 16, 8);
+      ctx.fillRect(-12, -6, 24, 8);
+      ctx.strokeStyle = '#2c3e50';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(-12, -6, 24, 8);
+      
+      // Window divider
+      ctx.strokeStyle = '#2c3e50';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, -6);
+      ctx.lineTo(0, 2);
+      ctx.stroke();
+      
+      // Wheels
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(-16, -12, 6, 4);
+      ctx.fillRect(10, -12, 6, 4);
+      ctx.fillRect(-16, 8, 6, 4);
+      ctx.fillRect(10, 8, 6, 4);
+      
+      // Wheel rims
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(-15, -11, 4, 2);
+      ctx.fillRect(11, -11, 4, 2);
+      ctx.fillRect(-15, 9, 4, 2);
+      ctx.fillRect(11, 9, 4, 2);
+      
+      // Headlights
+      ctx.fillStyle = '#fffacd';
+      ctx.fillRect(-18, -4, 3, 3);
+      ctx.fillRect(15, -4, 3, 3);
+      
+      // Taillights
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(-18, 1, 3, 3);
+      ctx.fillRect(15, 1, 3, 3);
       
       ctx.restore();
 
