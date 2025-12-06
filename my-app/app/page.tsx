@@ -38,8 +38,16 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black font-sans relative overflow-hidden">
+      {/* Blurred background game */}
+      <div className="absolute inset-0 opacity-30 blur-xl scale-110 pointer-events-none overflow-hidden">
+        <BackgroundGame />
+      </div>
+
+      {/* Enhanced gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900/95 via-gray-800/90 to-black/95"></div>
+
       {/* City background pattern - road grid */}
-      <div className="absolute inset-0 opacity-20">
+      <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
           backgroundImage: `
             repeating-linear-gradient(0deg, transparent, transparent 100px, rgba(255,255,255,0.1) 100px, rgba(255,255,255,0.1) 102px),
@@ -48,81 +56,97 @@ export default function Home() {
         }}></div>
       </div>
 
-      {/* Police lights effect */}
+      {/* Enhanced police lights effect */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-red-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-        <div className="absolute top-1/2 left-0 w-96 h-96 bg-blue-500/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/25 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-red-600/25 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+        <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-1/3 right-0 w-80 h-80 bg-red-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1.5s' }}></div>
       </div>
 
-      {/* Animated police cars in background */}
-      <div className="absolute top-20 left-10 text-6xl animate-bounce" style={{ animationDelay: '0s' }}>🚓</div>
-      <div className="absolute top-40 right-20 text-6xl animate-bounce" style={{ animationDelay: '1s' }}>🚓</div>
-      <div className="absolute bottom-32 left-20 text-6xl animate-bounce" style={{ animationDelay: '2s' }}>🚓</div>
-      <div className="absolute top-60 right-40 text-5xl animate-bounce" style={{ animationDelay: '1.5s' }}>🚗</div>
-
       <main className="container mx-auto px-4 py-16 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Game Title */}
-          <div className="mb-12 space-y-4">
-            <h1 className="text-6xl md:text-8xl font-black tracking-wider text-white drop-shadow-2xl animate-fade-in">
-              <span className="bg-gradient-to-r from-red-500 via-red-400 to-red-600 bg-clip-text text-transparent">
-                VERFOLGUNGS
-              </span>
-              <span className="text-blue-400 ml-4">JAGD</span>
-            </h1>
-            <div className="flex items-center justify-center gap-2">
-              <div className="h-1 w-16 bg-gradient-to-r from-transparent via-red-500 to-red-500"></div>
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-              <div className="h-1 w-32 bg-gradient-to-r from-blue-500 via-blue-500 to-transparent"></div>
+        <div className="max-w-5xl mx-auto text-center">
+          {/* Game Title - Enhanced */}
+          <div className="mb-16 space-y-6">
+            <div className="relative">
+              <h1 className="text-7xl md:text-9xl font-black tracking-wider text-white drop-shadow-2xl animate-fade-in relative z-10">
+                <span className="bg-gradient-to-r from-red-500 via-red-400 to-red-600 bg-clip-text text-transparent animate-pulse">
+                  VERFOLGUNGS
+                </span>
+                <span className="text-blue-400 ml-4 animate-pulse" style={{ animationDelay: '0.3s' }}>JAGD</span>
+              </h1>
+              {/* Glow effect behind title */}
+              <div className="absolute inset-0 blur-2xl opacity-50">
+                <h1 className="text-7xl md:text-9xl font-black tracking-wider">
+                  <span className="text-red-500/50">VERFOLGUNGS</span>
+                  <span className="text-blue-400/50 ml-4">JAGD</span>
+                </h1>
+              </div>
             </div>
-            <p className="text-xl md:text-2xl text-gray-300 mt-8 font-light tracking-wide">
+            <div className="flex items-center justify-center gap-3">
+              <div className="h-1.5 w-24 bg-gradient-to-r from-transparent via-red-500 to-red-500 animate-pulse"></div>
+              <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
+              <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse shadow-lg shadow-blue-500/50" style={{ animationDelay: '0.5s' }}></div>
+              <div className="h-1.5 w-40 bg-gradient-to-r from-blue-500 via-blue-500 to-transparent animate-pulse"></div>
+            </div>
+            <p className="text-2xl md:text-3xl text-gray-200 mt-10 font-light tracking-wide drop-shadow-lg">
               Entkomme der Polizei so lange wie möglich!
+            </p>
+            <p className="text-lg md:text-xl text-gray-400 mt-4 font-light">
+              Sammle Sterne und werde zum Meister der Flucht
             </p>
           </div>
 
-          {/* High Score Display */}
-          <div className="mb-12 flex justify-center">
-            <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl px-8 py-4 border-2 border-red-500 shadow-2xl">
-              <div className="text-red-400 text-sm uppercase tracking-wider mb-1">Bester Score</div>
-              <div className="text-4xl font-bold text-white flex items-center gap-2">
-                <span className="text-yellow-400">⭐</span>
-                <span>{statistics.totalWinnings > 0 ? Math.floor(statistics.totalWinnings / 100) : 0}</span>
+          {/* High Score Display - Enhanced */}
+          <div className="mb-16 flex justify-center">
+            <div className="bg-gradient-to-r from-gray-800/90 via-gray-900/90 to-gray-800/90 backdrop-blur-sm rounded-3xl px-10 py-6 border-2 border-red-500/80 shadow-2xl shadow-red-500/20 transform hover:scale-105 transition-all duration-300">
+              <div className="text-red-400 text-sm uppercase tracking-wider mb-2 font-bold">Bester Score</div>
+              <div className="text-5xl font-black text-white flex items-center justify-center gap-3">
+                <span className="text-yellow-400 text-6xl animate-pulse">⭐</span>
+                <span className="bg-gradient-to-r from-yellow-400 to-yellow-300 bg-clip-text text-transparent">
+                  {statistics.totalWinnings > 0 ? Math.floor(statistics.totalWinnings / 100) : 0}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Main Play Button */}
-          <div className="mb-12">
+          {/* Main Play Button - Enhanced */}
+          <div className="mb-16">
             <button
               onClick={() => setShowGame(true)}
               onMouseEnter={() => setHoveredGame('play')}
               onMouseLeave={() => setHoveredGame(null)}
-              className="group relative inline-flex items-center justify-center px-16 py-8 text-3xl font-bold text-white bg-gradient-to-r from-red-600 via-red-500 to-red-600 rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-red-500/50 active:scale-95 overflow-hidden border-4 border-red-400"
+              className="group relative inline-flex items-center justify-center px-20 py-10 text-4xl font-black text-white bg-gradient-to-r from-red-600 via-red-500 to-red-600 rounded-3xl shadow-2xl shadow-red-500/30 transform transition-all duration-300 hover:scale-110 hover:shadow-red-500/60 active:scale-95 overflow-hidden border-4 border-red-400/80"
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-blue-500 via-red-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-              <span className="relative flex items-center gap-4">
-                <span className="text-4xl">🚗</span>
-                SPIEL STARTEN
-                <span className="text-4xl">🚓</span>
+              <span className="absolute inset-0 bg-gradient-to-r from-blue-500 via-red-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></span>
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
+              <span className="relative flex items-center gap-6 z-10">
+                <span className="text-5xl transform group-hover:rotate-12 transition-transform duration-300">🚗</span>
+                <span className="drop-shadow-lg">SPIEL STARTEN</span>
+                <span className="text-5xl transform group-hover:-rotate-12 transition-transform duration-300">🚓</span>
               </span>
             </button>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap justify-center gap-4 mt-8">
+          {/* Action Buttons - Enhanced */}
+          <div className="flex flex-wrap justify-center gap-6 mt-8">
             <button 
               onClick={() => setShowStats(true)}
-              className="px-8 py-4 rounded-lg bg-gradient-to-r from-gray-800 to-gray-700 text-white font-bold border-2 border-gray-500 hover:border-gray-400 transition-all duration-300 shadow-lg hover:shadow-gray-500/30 transform hover:scale-105"
+              className="px-10 py-5 rounded-xl bg-gradient-to-r from-gray-800/90 to-gray-700/90 backdrop-blur-sm text-white font-bold text-lg border-2 border-gray-500/80 hover:border-yellow-400/80 transition-all duration-300 shadow-lg hover:shadow-yellow-500/30 transform hover:scale-110 hover:-translate-y-1"
             >
-              📊 Statistiken
+              <span className="flex items-center gap-2">
+                <span className="text-2xl">📊</span>
+                <span>Statistiken</span>
+              </span>
             </button>
             <button 
               onClick={() => setShowInstructions(true)}
-              className="px-8 py-4 rounded-lg bg-gradient-to-r from-gray-800 to-gray-700 text-white font-bold border-2 border-gray-500 hover:border-gray-400 transition-all duration-300 shadow-lg hover:shadow-gray-500/30 transform hover:scale-105"
+              className="px-10 py-5 rounded-xl bg-gradient-to-r from-gray-800/90 to-gray-700/90 backdrop-blur-sm text-white font-bold text-lg border-2 border-gray-500/80 hover:border-blue-400/80 transition-all duration-300 shadow-lg hover:shadow-blue-500/30 transform hover:scale-110 hover:-translate-y-1"
             >
-              🎯 Anleitung
+              <span className="flex items-center gap-2">
+                <span className="text-2xl">🎯</span>
+                <span>Anleitung</span>
+              </span>
             </button>
           </div>
         </div>
@@ -374,6 +398,142 @@ export default function Home() {
   );
 }
 
+// Background Game Component (blurred preview)
+function BackgroundGame() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const gameLoopRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = 800;
+    canvas.height = 600;
+
+    // Game state for background
+    const player = { x: 400, y: 300, angle: 0, speed: 2 };
+    const police: Array<{ x: number; y: number; angle: number; speed: number }> = [];
+    const buildings: Array<{ x: number; y: number; width: number; height: number }> = [];
+
+    // Initialize buildings
+    for (let i = 0; i < 15; i++) {
+      buildings.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        width: 60 + Math.random() * 80,
+        height: 60 + Math.random() * 100,
+      });
+    }
+
+    // Initialize police cars
+    for (let i = 0; i < 3; i++) {
+      police.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        angle: Math.random() * Math.PI * 2,
+        speed: 2.5 + Math.random() * 1,
+      });
+    }
+
+    let lastTime = Date.now();
+    let gameStartTime = Date.now();
+
+    const gameLoop = () => {
+      const now = Date.now();
+      const elapsed = (now - gameStartTime) / 1000;
+
+      // Update player (auto-movement for demo)
+      player.angle += 0.02;
+      player.x += Math.cos(player.angle) * player.speed;
+      player.y += Math.sin(player.angle) * player.speed;
+
+      // Wrap around
+      if (player.x < 0) player.x = canvas.width;
+      if (player.x > canvas.width) player.x = 0;
+      if (player.y < 0) player.y = canvas.height;
+      if (player.y > canvas.height) player.y = 0;
+
+      // Update police (chase player)
+      police.forEach((p) => {
+        const dx = player.x - p.x;
+        const dy = player.y - p.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 0) {
+          p.angle = Math.atan2(dy, dx);
+          p.x += Math.cos(p.angle) * p.speed;
+          p.y += Math.sin(p.angle) * p.speed;
+        }
+      });
+
+      // Draw
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw road grid
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < canvas.width; i += 100) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+      }
+      for (let i = 0; i < canvas.height; i += 100) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+      }
+
+      // Draw buildings
+      ctx.fillStyle = '#2c3e50';
+      buildings.forEach(building => {
+        ctx.fillRect(building.x, building.y, building.width, building.height);
+      });
+
+      // Draw police cars
+      police.forEach(p => {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+        ctx.fillStyle = '#1a4d8c';
+        ctx.fillRect(-18, -10, 36, 20);
+        ctx.restore();
+      });
+
+      // Draw player car
+      ctx.save();
+      ctx.translate(player.x, player.y);
+      ctx.rotate(player.angle);
+      ctx.fillStyle = '#c0392b';
+      ctx.fillRect(-18, -10, 36, 20);
+      ctx.restore();
+
+      gameLoopRef.current = requestAnimationFrame(gameLoop);
+    };
+
+    gameLoopRef.current = requestAnimationFrame(gameLoop);
+
+    return () => {
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="w-full h-full"
+      style={{ display: 'block' }}
+    />
+  );
+}
+
 // Chase Game Component
 interface ChaseGameProps {
   onClose: () => void;
@@ -390,9 +550,18 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
   const [policeCount, setPoliceCount] = useState(1);
 
   // Game state
-  const playerRef = useRef({ x: 400, y: 300, angle: 0, speed: 0 });
-  const policeRef = useRef<Array<{ x: number; y: number; angle: number; speed: number }>>([]);
+  const playerRef = useRef({ x: 400, y: 300, angle: 0, speed: 0, vx: 0, vy: 0 });
+  const policeRef = useRef<Array<{ 
+    x: number; 
+    y: number; 
+    angle: number; 
+    speed: number;
+    targetAngle: number;
+    acceleration: number;
+    maxSpeed: number;
+  }>>([]);
   const buildingsRef = useRef<Array<{ x: number; y: number; width: number; height: number }>>([]);
+  const playerHistoryRef = useRef<Array<{ x: number; y: number; time: number }>>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -406,7 +575,8 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     canvas.height = 600;
 
     // Initialize player
-    playerRef.current = { x: 400, y: 300, angle: 0, speed: 0 };
+    playerRef.current = { x: 400, y: 300, angle: 0, speed: 0, vx: 0, vy: 0 };
+    playerHistoryRef.current = [];
 
     // Initialize buildings (city blocks)
     buildingsRef.current = [];
@@ -419,14 +589,17 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       });
     }
 
-    // Initialize police cars
+    // Initialize police cars with smarter AI
     policeRef.current = [];
     for (let i = 0; i < policeCount; i++) {
       policeRef.current.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
         angle: Math.random() * Math.PI * 2,
-        speed: 2 + Math.random() * 1,
+        speed: 0,
+        targetAngle: 0,
+        acceleration: 0.15 + Math.random() * 0.1,
+        maxSpeed: 3 + Math.random() * 1.5, // Speed increases over time in game loop
       });
     }
 
@@ -466,7 +639,10 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           angle: Math.random() * Math.PI * 2,
-          speed: 2 + Math.random() * 1.5,
+          speed: 0,
+          targetAngle: 0,
+          acceleration: 0.15 + Math.random() * 0.1,
+          maxSpeed: 3 + Math.random() * 1.5 + (elapsed * 0.1),
         });
         setPoliceCount(policeRef.current.length);
       }
@@ -497,24 +673,120 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       player.x += Math.cos(player.angle) * player.speed;
       player.y += Math.sin(player.angle) * player.speed;
 
+      // Track player history for prediction (last 10 positions)
+      playerHistoryRef.current.push({ x: player.x, y: player.y, time: now });
+      if (playerHistoryRef.current.length > 10) {
+        playerHistoryRef.current.shift();
+      }
+
       // Wrap around screen
       if (player.x < 0) player.x = canvas.width;
       if (player.x > canvas.width) player.x = 0;
       if (player.y < 0) player.y = canvas.height;
       if (player.y > canvas.height) player.y = 0;
 
-      // Update police cars
+      // Update police cars with smarter AI
       policeRef.current.forEach((police, index) => {
-        // Move towards player
+        // Update max speed based on elapsed time (gets faster over time)
+        police.maxSpeed = 3 + Math.random() * 1.5 + (elapsed * 0.15);
+        
+        // Calculate direct distance to player
         const dx = player.x - police.x;
         const dy = player.y - police.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        if (distance > 0) {
-          police.angle = Math.atan2(dy, dx);
-          police.x += Math.cos(police.angle) * police.speed;
-          police.y += Math.sin(police.angle) * police.speed;
+        // Predict player position based on movement history
+        let predictedX = player.x;
+        let predictedY = player.y;
+        
+        if (playerHistoryRef.current.length >= 3) {
+          const recent = playerHistoryRef.current.slice(-3);
+          const vx = (recent[2].x - recent[0].x) / (recent[2].time - recent[0].time) * 16;
+          const vy = (recent[2].y - recent[0].y) / (recent[2].time - recent[0].time) * 16;
+          // Predict where player will be in 0.5 seconds
+          predictedX = player.x + vx * 0.5;
+          predictedY = player.y + vy * 0.5;
         }
+        
+        // Calculate angle to predicted position
+        const predDx = predictedX - police.x;
+        const predDy = predictedY - police.y;
+        const predDistance = Math.sqrt(predDx * predDx + predDy * predDy);
+        
+        // Smart targeting: mix of direct and predicted position
+        const predictionWeight = Math.min(distance / 200, 0.7); // More prediction when far away
+        const targetX = player.x * (1 - predictionWeight) + predictedX * predictionWeight;
+        const targetY = player.y * (1 - predictionWeight) + predictedY * predictionWeight;
+        
+        // Calculate target angle
+        const targetDx = targetX - police.x;
+        const targetDy = targetY - police.y;
+        police.targetAngle = Math.atan2(targetDy, targetDx);
+        
+        // Smooth rotation towards target (smarter turning)
+        let angleDiff = police.targetAngle - police.angle;
+        // Normalize angle difference to [-PI, PI]
+        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+        
+        // Turn faster when far from target, slower when close (for better control)
+        const turnSpeed = 0.08 + Math.min(distance / 300, 0.05);
+        police.angle += Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), turnSpeed);
+        
+        // Acceleration and speed management
+        if (distance > 50) {
+          // Accelerate towards player
+          police.speed = Math.min(police.speed + police.acceleration, police.maxSpeed);
+        } else {
+          // Slow down when close for better control
+          police.speed = Math.max(police.speed - police.acceleration * 0.5, police.maxSpeed * 0.7);
+        }
+        
+        // Apply friction
+        police.speed *= 0.98;
+        
+        // Move police car
+        police.x += Math.cos(police.angle) * police.speed;
+        police.y += Math.sin(police.angle) * police.speed;
+        
+        // Avoid buildings (simple collision avoidance)
+        buildingsRef.current.forEach(building => {
+          const buildingCenterX = building.x + building.width / 2;
+          const buildingCenterY = building.y + building.height / 2;
+          const distToBuilding = Math.sqrt(
+            Math.pow(police.x - buildingCenterX, 2) + 
+            Math.pow(police.y - buildingCenterY, 2)
+          );
+          
+          if (distToBuilding < 80) {
+            // Steer away from building
+            const avoidAngle = Math.atan2(police.y - buildingCenterY, police.x - buildingCenterX);
+            const avoidWeight = (80 - distToBuilding) / 80;
+            police.angle += (avoidAngle - police.angle) * avoidWeight * 0.1;
+          }
+        });
+        
+        // Coordinate with other police cars (flanking behavior)
+        policeRef.current.forEach((otherPolice, otherIndex) => {
+          if (index !== otherIndex) {
+            const distToOther = Math.sqrt(
+              Math.pow(police.x - otherPolice.x, 2) + 
+              Math.pow(police.y - otherPolice.y, 2)
+            );
+            
+            if (distToOther < 100 && distToOther > 30) {
+              // Try to spread out around player
+              const angleToOther = Math.atan2(otherPolice.y - police.y, otherPolice.x - police.x);
+              const angleToPlayer = Math.atan2(player.y - police.y, player.x - police.x);
+              const angleDiff = angleToOther - angleToPlayer;
+              
+              // Steer to create better coverage
+              if (Math.abs(angleDiff) < Math.PI / 2) {
+                police.angle += Math.sign(angleDiff) * 0.05;
+              }
+            }
+          }
+        });
 
         // Check collision with player
         const collisionDist = Math.sqrt(
