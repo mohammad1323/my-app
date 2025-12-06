@@ -729,8 +729,29 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
   const buildingsRef = useRef<Array<{ x: number; y: number; width: number; height: number }>>([]);
   const playerHistoryRef = useRef<Array<{ x: number; y: number; time: number }>>([]);
   const boostsRef = useRef<Array<{ x: number; y: number; id: number; collected: boolean }>>([]);
+  const cameraRef = useRef({ x: 0, y: 0 });
+  const particlesRef = useRef<Array<{ x: number; y: number; vx: number; vy: number; life: number; color: string }>>([]);
   const [boostActive, setBoostActive] = useState(false);
   const [boostTimeLeft, setBoostTimeLeft] = useState(0);
+  
+  // Game constants
+  const GAME_CONSTANTS = {
+    WORLD_WIDTH: 2400,
+    WORLD_HEIGHT: 2400,
+    CANVAS_WIDTH: 800,
+    CANVAS_HEIGHT: 600,
+    PLAYER_MAX_SPEED: 8,
+    PLAYER_BOOST_MAX_SPEED: 12,
+    PLAYER_ACCELERATION: 0.3,
+    PLAYER_ROTATION_SPEED: 0.12,
+    POLICE_BASE_SPEED: 4,
+    POLICE_MAX_COUNT: 8,
+    BOOST_DURATION: 5,
+    BOOST_SPAWN_RATE: 0.003,
+    BOOST_MAX_COUNT: 3,
+    COLLISION_DISTANCE: 25,
+    CAMERA_SMOOTHING: 0.1,
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -740,27 +761,33 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     if (!ctx) return;
 
     // Set canvas size (viewport)
-    canvas.width = 800;
-    canvas.height = 600;
+    canvas.width = GAME_CONSTANTS.CANVAS_WIDTH;
+    canvas.height = GAME_CONSTANTS.CANVAS_HEIGHT;
 
-    // World size (much larger than viewport for open city)
-    const worldWidth = 2400;
-    const worldHeight = 2400;
-
-    // Camera state
-    const cameraRef = useRef({ x: 0, y: 0 });
+    // Initialize camera
+    cameraRef.current = { x: 0, y: 0 };
 
     // Initialize player in center of world
-    playerRef.current = { x: worldWidth / 2, y: worldHeight / 2, angle: 0, speed: 0, vx: 0, vy: 0, boostActive: false, boostTimeLeft: 0 };
+    playerRef.current = { 
+      x: GAME_CONSTANTS.WORLD_WIDTH / 2, 
+      y: GAME_CONSTANTS.WORLD_HEIGHT / 2, 
+      angle: 0, 
+      speed: 0, 
+      vx: 0, 
+      vy: 0, 
+      boostActive: false, 
+      boostTimeLeft: 0 
+    };
     playerHistoryRef.current = [];
     boostsRef.current = [];
+    particlesRef.current = [];
 
     // Initialize buildings (city blocks) - more buildings in larger world
     buildingsRef.current = [];
     for (let i = 0; i < 50; i++) {
       buildingsRef.current.push({
-        x: Math.random() * worldWidth,
-        y: Math.random() * worldHeight,
+        x: Math.random() * GAME_CONSTANTS.WORLD_WIDTH,
+        y: Math.random() * GAME_CONSTANTS.WORLD_HEIGHT,
         width: 60 + Math.random() * 100,
         height: 60 + Math.random() * 120,
       });
@@ -770,13 +797,13 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     policeRef.current = [];
     for (let i = 0; i < policeCount; i++) {
       policeRef.current.push({
-        x: Math.random() * worldWidth,
-        y: Math.random() * worldHeight,
+        x: Math.random() * GAME_CONSTANTS.WORLD_WIDTH,
+        y: Math.random() * GAME_CONSTANTS.WORLD_HEIGHT,
         angle: Math.random() * Math.PI * 2,
         speed: 0,
         targetAngle: 0,
-        acceleration: 0.2 + Math.random() * 0.15, // Faster acceleration
-        maxSpeed: 4 + Math.random() * 2, // Faster base speed
+        acceleration: 0.2 + Math.random() * 0.15,
+        maxSpeed: GAME_CONSTANTS.POLICE_BASE_SPEED + Math.random() * 2,
       });
     }
 
@@ -812,8 +839,9 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       // Get player reference early
       const player = playerRef.current;
 
-      // Spawn boost items (every 8-12 seconds, max 3 on screen)
-      if (Math.random() < 0.003 && boostsRef.current.filter(b => !b.collected).length < 3) {
+      // Spawn boost items
+      if (Math.random() < GAME_CONSTANTS.BOOST_SPAWN_RATE && 
+          boostsRef.current.filter(b => !b.collected).length < GAME_CONSTANTS.BOOST_MAX_COUNT) {
         // Make sure boost doesn't spawn on buildings - spawn in world coordinates
         let validPosition = false;
         let boostX = 0;
@@ -828,8 +856,8 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
           boostY = player.y + Math.sin(spawnAngle) * spawnDistance;
           
           // Keep within world bounds
-          boostX = Math.max(50, Math.min(worldWidth - 50, boostX));
-          boostY = Math.max(50, Math.min(worldHeight - 50, boostY));
+          boostX = Math.max(50, Math.min(GAME_CONSTANTS.WORLD_WIDTH - 50, boostX));
+          boostY = Math.max(50, Math.min(GAME_CONSTANTS.WORLD_HEIGHT - 50, boostY));
           
           validPosition = true;
           
@@ -855,19 +883,27 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       }
 
       // Update boost timer
-      if (playerRef.current.boostActive) {
-        playerRef.current.boostTimeLeft -= deltaTime / 16;
-        setBoostTimeLeft(Math.max(0, Math.floor(playerRef.current.boostTimeLeft)));
+      if (player.boostActive) {
+        player.boostTimeLeft -= deltaTime / 16;
+        setBoostTimeLeft(Math.max(0, Math.floor(player.boostTimeLeft)));
         
-        if (playerRef.current.boostTimeLeft <= 0) {
-          playerRef.current.boostActive = false;
+        if (player.boostTimeLeft <= 0) {
+          player.boostActive = false;
           setBoostActive(false);
         }
       }
+      
+      // Update particles
+      particlesRef.current = particlesRef.current.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 1;
+        return p.life > 0;
+      });
 
       // Spawn more police cars over time
       const targetPoliceCount = 1 + Math.floor(elapsed / 10);
-      if (targetPoliceCount > policeRef.current.length && policeRef.current.length < 8) {
+      if (targetPoliceCount > policeRef.current.length && policeRef.current.length < GAME_CONSTANTS.POLICE_MAX_COUNT) {
         // Spawn near player but not too close
         const spawnDistance = 200 + Math.random() * 300;
         const spawnAngle = Math.random() * Math.PI * 2;
@@ -878,7 +914,7 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
           speed: 0,
           targetAngle: 0,
           acceleration: 0.2 + Math.random() * 0.15,
-          maxSpeed: 4 + Math.random() * 2 + (elapsed * 0.15),
+          maxSpeed: GAME_CONSTANTS.POLICE_BASE_SPEED + Math.random() * 2 + (elapsed * 0.15),
         });
         setPoliceCount(policeRef.current.length);
       }
@@ -888,25 +924,25 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       let rotation = 0;
 
       if (keysRef.current['ArrowUp'] || keysRef.current['w'] || keysRef.current['W']) {
-        acceleration = 0.3; // Faster acceleration
+        acceleration = GAME_CONSTANTS.PLAYER_ACCELERATION;
       }
       if (keysRef.current['ArrowDown'] || keysRef.current['s'] || keysRef.current['S']) {
-        acceleration = -0.2; // Faster reverse
+        acceleration = -GAME_CONSTANTS.PLAYER_ACCELERATION * 0.67;
       }
       if (keysRef.current['ArrowLeft'] || keysRef.current['a'] || keysRef.current['A']) {
-        rotation = -0.12; // Faster turning
+        rotation = -GAME_CONSTANTS.PLAYER_ROTATION_SPEED;
       }
       if (keysRef.current['ArrowRight'] || keysRef.current['d'] || keysRef.current['D']) {
-        rotation = 0.12; // Faster turning
+        rotation = GAME_CONSTANTS.PLAYER_ROTATION_SPEED;
       }
 
       player.angle += rotation;
       player.speed += acceleration;
-      player.speed *= 0.96; // Less friction for faster movement
+      player.speed *= 0.96; // Friction
       
-      // Apply boost speed multiplier - increased speeds
-      const maxSpeed = player.boostActive ? 12 : 8; // Much faster
-      const minSpeed = player.boostActive ? -8 : -6;
+      // Apply boost speed multiplier
+      const maxSpeed = player.boostActive ? GAME_CONSTANTS.PLAYER_BOOST_MAX_SPEED : GAME_CONSTANTS.PLAYER_MAX_SPEED;
+      const minSpeed = player.boostActive ? -GAME_CONSTANTS.PLAYER_BOOST_MAX_SPEED * 0.67 : -GAME_CONSTANTS.PLAYER_MAX_SPEED * 0.75;
       player.speed = Math.max(minSpeed, Math.min(maxSpeed, player.speed));
 
       player.x += Math.cos(player.angle) * player.speed;
@@ -927,9 +963,21 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
           if (dist < 30) {
             boost.collected = true;
             player.boostActive = true;
-            player.boostTimeLeft = 5; // 5 seconds of boost
+            player.boostTimeLeft = GAME_CONSTANTS.BOOST_DURATION;
             setBoostActive(true);
-            setBoostTimeLeft(5);
+            setBoostTimeLeft(GAME_CONSTANTS.BOOST_DURATION);
+            
+            // Create particle effect
+            for (let i = 0; i < 15; i++) {
+              particlesRef.current.push({
+                x: boost.x,
+                y: boost.y,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
+                life: 30 + Math.random() * 20,
+                color: Math.random() > 0.5 ? '#00ff00' : '#ffff00'
+              });
+            }
           }
         }
       });
@@ -939,22 +987,34 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
 
       // Keep player within world bounds (no wrap around - open city)
       const margin = 50;
-      if (player.x < margin) player.x = margin;
-      if (player.x > worldWidth - margin) player.x = worldWidth - margin;
-      if (player.y < margin) player.y = margin;
-      if (player.y > worldHeight - margin) player.y = worldHeight - margin;
+      if (player.x < margin) {
+        player.x = margin;
+        player.speed *= 0.5; // Bounce effect
+      }
+      if (player.x > GAME_CONSTANTS.WORLD_WIDTH - margin) {
+        player.x = GAME_CONSTANTS.WORLD_WIDTH - margin;
+        player.speed *= 0.5;
+      }
+      if (player.y < margin) {
+        player.y = margin;
+        player.speed *= 0.5;
+      }
+      if (player.y > GAME_CONSTANTS.WORLD_HEIGHT - margin) {
+        player.y = GAME_CONSTANTS.WORLD_HEIGHT - margin;
+        player.speed *= 0.5;
+      }
 
       // Update camera to follow player smoothly
-      const targetCameraX = player.x - canvas.width / 2;
-      const targetCameraY = player.y - canvas.height / 2;
+      const targetCameraX = player.x - GAME_CONSTANTS.CANVAS_WIDTH / 2;
+      const targetCameraY = player.y - GAME_CONSTANTS.CANVAS_HEIGHT / 2;
       
       // Smooth camera movement
-      cameraRef.current.x += (targetCameraX - cameraRef.current.x) * 0.1;
-      cameraRef.current.y += (targetCameraY - cameraRef.current.y) * 0.1;
+      cameraRef.current.x += (targetCameraX - cameraRef.current.x) * GAME_CONSTANTS.CAMERA_SMOOTHING;
+      cameraRef.current.y += (targetCameraY - cameraRef.current.y) * GAME_CONSTANTS.CAMERA_SMOOTHING;
       
       // Keep camera within world bounds
-      cameraRef.current.x = Math.max(0, Math.min(worldWidth - canvas.width, cameraRef.current.x));
-      cameraRef.current.y = Math.max(0, Math.min(worldHeight - canvas.height, cameraRef.current.y));
+      cameraRef.current.x = Math.max(0, Math.min(GAME_CONSTANTS.WORLD_WIDTH - GAME_CONSTANTS.CANVAS_WIDTH, cameraRef.current.x));
+      cameraRef.current.y = Math.max(0, Math.min(GAME_CONSTANTS.WORLD_HEIGHT - GAME_CONSTANTS.CANVAS_HEIGHT, cameraRef.current.y));
 
       // Update police cars with smarter AI
       policeRef.current.forEach((police, index) => {
@@ -1059,11 +1119,22 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
           }
         });
 
-        // Check collision with player
-        const collisionDist = Math.sqrt(
-          Math.pow(player.x - police.x, 2) + Math.pow(player.y - police.y, 2)
-        );
-        if (collisionDist < 25) {
+        // Check collision with player (optimized distance check)
+        const collisionDx = player.x - police.x;
+        const collisionDy = player.y - police.y;
+        const collisionDistSq = collisionDx * collisionDx + collisionDy * collisionDy;
+        if (collisionDistSq < GAME_CONSTANTS.COLLISION_DISTANCE * GAME_CONSTANTS.COLLISION_DISTANCE) {
+          // Create explosion particles
+          for (let i = 0; i < 20; i++) {
+            particlesRef.current.push({
+              x: player.x,
+              y: player.y,
+              vx: (Math.random() - 0.5) * 6,
+              vy: (Math.random() - 0.5) * 6,
+              life: 40 + Math.random() * 20,
+              color: Math.random() > 0.5 ? '#ff0000' : '#ff6600'
+            });
+          }
           setGameState('gameOver');
           onGameEnd(newStars, Math.floor(elapsed));
         }
@@ -1075,43 +1146,60 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
 
       // Draw world background
       ctx.fillStyle = '#1a1a2e';
-      ctx.fillRect(0, 0, worldWidth, worldHeight);
+      ctx.fillRect(0, 0, GAME_CONSTANTS.WORLD_WIDTH, GAME_CONSTANTS.WORLD_HEIGHT);
 
-      // Draw road grid in world coordinates
+      // Draw road grid in world coordinates (only visible lines)
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 2;
-      for (let i = 0; i < worldWidth; i += 100) {
+      const gridStartX = Math.floor(cameraRef.current.x / 100) * 100;
+      const gridEndX = Math.ceil((cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH) / 100) * 100;
+      const gridStartY = Math.floor(cameraRef.current.y / 100) * 100;
+      const gridEndY = Math.ceil((cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT) / 100) * 100;
+      
+      for (let i = gridStartX; i <= gridEndX; i += 100) {
         ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, worldHeight);
+        ctx.moveTo(i, gridStartY);
+        ctx.lineTo(i, gridEndY);
         ctx.stroke();
       }
-      for (let i = 0; i < worldHeight; i += 100) {
+      for (let i = gridStartY; i <= gridEndY; i += 100) {
         ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(worldWidth, i);
+        ctx.moveTo(gridStartX, i);
+        ctx.lineTo(gridEndX, i);
         ctx.stroke();
       }
+      
+      // Draw particles
+      particlesRef.current.forEach(particle => {
+        ctx.fillStyle = particle.color;
+        ctx.globalAlpha = particle.life / 50;
+        ctx.fillRect(particle.x - 2, particle.y - 2, 4, 4);
+      });
+      ctx.globalAlpha = 1;
 
       // Draw buildings (only those in view)
       ctx.fillStyle = '#2c3e50';
       buildingsRef.current.forEach(building => {
-        // Only draw if building is in camera view (with margin)
+        // Only draw if building is in camera view (with margin) - optimized check
         if (building.x + building.width >= cameraRef.current.x - 100 &&
-            building.x <= cameraRef.current.x + canvas.width + 100 &&
+            building.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 100 &&
             building.y + building.height >= cameraRef.current.y - 100 &&
-            building.y <= cameraRef.current.y + canvas.height + 100) {
+            building.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 100) {
           ctx.fillRect(building.x, building.y, building.width, building.height);
           ctx.strokeStyle = '#34495e';
           ctx.lineWidth = 2;
           ctx.strokeRect(building.x, building.y, building.width, building.height);
           
-          // Add windows to buildings
+          // Add windows to buildings (cached pattern for performance)
           ctx.fillStyle = '#34495e';
-          for (let wx = building.x + 10; wx < building.x + building.width - 10; wx += 15) {
-            for (let wy = building.y + 10; wy < building.y + building.height - 10; wy += 15) {
-              if (Math.random() > 0.3) {
-                ctx.fillRect(wx, wy, 8, 10);
+          const windowSpacing = 15;
+          const windowSize = 8;
+          for (let wx = building.x + 10; wx < building.x + building.width - 10; wx += windowSpacing) {
+            for (let wy = building.y + 10; wy < building.y + building.height - 10; wy += windowSpacing) {
+              // Use deterministic pattern instead of random for better performance
+              const windowHash = ((wx * 7 + wy * 11) % 100) / 100;
+              if (windowHash > 0.3) {
+                ctx.fillRect(wx, wy, windowSize, 10);
               }
             }
           }
@@ -1124,9 +1212,9 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         if (!boost.collected) {
           // Only draw if boost is in camera view
           if (boost.x >= cameraRef.current.x - 50 &&
-              boost.x <= cameraRef.current.x + canvas.width + 50 &&
+              boost.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50 &&
               boost.y >= cameraRef.current.y - 50 &&
-              boost.y <= cameraRef.current.y + canvas.height + 50) {
+              boost.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
             const pulse = Math.sin(Date.now() / 200) * 0.3 + 0.7;
             
             // Glow effect
@@ -1186,9 +1274,9 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       policeRef.current.forEach(police => {
         // Only draw if police is in camera view
         if (police.x >= cameraRef.current.x - 50 &&
-            police.x <= cameraRef.current.x + canvas.width + 50 &&
+            police.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50 &&
             police.y >= cameraRef.current.y - 50 &&
-            police.y <= cameraRef.current.y + canvas.height + 50) {
+            police.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
         ctx.save();
         ctx.translate(police.x, police.y);
         ctx.rotate(police.angle);
@@ -1423,6 +1511,18 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         ctx.fillStyle = '#ffaa00';
         ctx.fillRect(-22, 3, 3, 1);
         ctx.fillRect(17, 3, 3, 1);
+        
+        // Add exhaust particles
+        if (Math.random() < 0.3) {
+          particlesRef.current.push({
+            x: player.x - Math.cos(player.angle) * 20,
+            y: player.y - Math.sin(player.angle) * 20,
+            vx: -Math.cos(player.angle) * 2 + (Math.random() - 0.5) * 1,
+            vy: -Math.sin(player.angle) * 2 + (Math.random() - 0.5) * 1,
+            life: 15 + Math.random() * 10,
+            color: Math.random() > 0.5 ? '#ff6600' : '#ffaa00'
+          });
+        }
       }
       
       ctx.restore();
