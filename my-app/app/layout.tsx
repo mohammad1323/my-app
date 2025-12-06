@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Verfolgungsjagd",
-  description: "Entkomme der Polizei in diesem actionreichen Verfolgungsjagd-Spiel",
+  title: "Dodge Ball",
+  description: "Entkomme der Polizei in diesem actionreichen Dodge Ball Spiel mit Drift-Effekten",
 };
 
 export default function RootLayout({

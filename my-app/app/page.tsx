@@ -196,16 +196,16 @@ export default function Home() {
           <div className="mb-16 space-y-6">
             <div className="relative">
               <h1 className="text-7xl md:text-9xl font-black tracking-wider text-white drop-shadow-2xl animate-fade-in relative z-10">
-                <span className="bg-gradient-to-r from-red-500 via-red-400 to-red-600 bg-clip-text text-transparent animate-pulse">
-                  VERFOLGUNGS
+                <span className="bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 bg-clip-text text-transparent animate-pulse">
+                  DODGE
                 </span>
-                <span className="text-blue-400 ml-4 animate-pulse" style={{ animationDelay: '0.3s' }}>JAGD</span>
+                <span className="text-yellow-400 ml-4 animate-pulse" style={{ animationDelay: '0.3s' }}>BALL</span>
               </h1>
               {/* Glow effect behind title */}
               <div className="absolute inset-0 blur-2xl opacity-50">
                 <h1 className="text-7xl md:text-9xl font-black tracking-wider">
-                  <span className="text-red-500/50">VERFOLGUNGS</span>
-                  <span className="text-blue-400/50 ml-4">JAGD</span>
+                  <span className="text-orange-500/50">DODGE</span>
+                  <span className="text-yellow-400/50 ml-4">BALL</span>
                 </h1>
               </div>
             </div>
@@ -216,10 +216,10 @@ export default function Home() {
               <div className="h-1.5 w-40 bg-gradient-to-r from-blue-500 via-blue-500 to-transparent animate-pulse"></div>
             </div>
             <p className="text-2xl md:text-3xl text-gray-200 mt-10 font-light tracking-wide drop-shadow-lg">
-              Entkomme der Polizei so lange wie möglich!
+              Entkomme der Polizei in der Stadt!
             </p>
             <p className="text-lg md:text-xl text-gray-400 mt-4 font-light">
-              Sammle Sterne und werde zum Meister der Flucht
+              Nutze Drift-Effekte und Boost-Items für maximale Geschwindigkeit
             </p>
           </div>
 
@@ -339,9 +339,23 @@ export default function Home() {
                           <li><span className="font-bold">→ / D</span> - Nach rechts lenken</li>
                         </ul>
                         <p className="mt-3 text-sm text-gray-400">
-                          Tipp: Nutze die Gebäude als Deckung und bewege dich schnell, um der Polizei zu entkommen!
+                          💨 <span className="font-bold">Drift-Tipp:</span> Lenke schnell bei hoher Geschwindigkeit, um Drift-Effekte zu aktivieren! 
+                          Nutze die Straßen und Gebäude als Deckung!
                         </p>
                       </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-green-900/50 to-green-800/50 rounded-xl p-6 border-2 border-green-500/50 backdrop-blur-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="text-5xl">⚡</div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white mb-2">Boost-Items</h3>
+                      <p className="text-green-200 text-base">
+                        Sammle die ⚡ Boost-Items auf der Straße! Sie geben dir für 5 Sekunden eine 
+                        <span className="font-bold text-green-100"> massive Geschwindigkeitssteigerung</span> - perfekt zum Entkommen!
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -731,6 +745,7 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
   const boostsRef = useRef<Array<{ x: number; y: number; id: number; collected: boolean }>>([]);
   const cameraRef = useRef({ x: 0, y: 0 });
   const particlesRef = useRef<Array<{ x: number; y: number; vx: number; vy: number; life: number; color: string }>>([]);
+  const driftMarksRef = useRef<Array<{ x: number; y: number; angle: number; life: number; width: number }>>([]);
   const [boostActive, setBoostActive] = useState(false);
   const [boostTimeLeft, setBoostTimeLeft] = useState(0);
   
@@ -741,7 +756,7 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     CANVAS_WIDTH: 800,
     CANVAS_HEIGHT: 600,
     PLAYER_MAX_SPEED: 8,
-    PLAYER_BOOST_MAX_SPEED: 12,
+    PLAYER_BOOST_MAX_SPEED: 16, // Much faster boost
     PLAYER_ACCELERATION: 0.3,
     PLAYER_ROTATION_SPEED: 0.12,
     POLICE_BASE_SPEED: 4,
@@ -751,6 +766,8 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     BOOST_MAX_COUNT: 3,
     COLLISION_DISTANCE: 25,
     CAMERA_SMOOTHING: 0.1,
+    DRIFT_THRESHOLD: 0.15, // Speed difference for drift detection
+    ROAD_WIDTH: 120,
   };
 
   useEffect(() => {
@@ -781,10 +798,30 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     playerHistoryRef.current = [];
     boostsRef.current = [];
     particlesRef.current = [];
+    driftMarksRef.current = [];
 
-    // Initialize buildings (city blocks) - more buildings in larger world
+    // Initialize buildings (city blocks) - organized city layout with streets
     buildingsRef.current = [];
-    for (let i = 0; i < 50; i++) {
+    const blockSize = 200;
+    const streetWidth = GAME_CONSTANTS.ROAD_WIDTH;
+    
+    // Create organized city grid with streets
+    for (let blockX = 0; blockX < GAME_CONSTANTS.WORLD_WIDTH; blockX += blockSize + streetWidth) {
+      for (let blockY = 0; blockY < GAME_CONSTANTS.WORLD_HEIGHT; blockY += blockSize + streetWidth) {
+        // Skip some blocks to create variety
+        if (Math.random() > 0.3) {
+          buildingsRef.current.push({
+            x: blockX + Math.random() * 20,
+            y: blockY + Math.random() * 20,
+            width: blockSize - 40 + Math.random() * 20,
+            height: blockSize - 40 + Math.random() * 20,
+          });
+        }
+      }
+    }
+    
+    // Add some random buildings for variety
+    for (let i = 0; i < 20; i++) {
       buildingsRef.current.push({
         x: Math.random() * GAME_CONSTANTS.WORLD_WIDTH,
         y: Math.random() * GAME_CONSTANTS.WORLD_HEIGHT,
@@ -936,17 +973,64 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         rotation = GAME_CONSTANTS.PLAYER_ROTATION_SPEED;
       }
 
+      // Calculate drift (difference between movement direction and car angle)
+      const oldAngle = player.angle;
       player.angle += rotation;
       player.speed += acceleration;
       player.speed *= 0.96; // Friction
       
-      // Apply boost speed multiplier
+      // Apply boost speed multiplier - much faster
       const maxSpeed = player.boostActive ? GAME_CONSTANTS.PLAYER_BOOST_MAX_SPEED : GAME_CONSTANTS.PLAYER_MAX_SPEED;
       const minSpeed = player.boostActive ? -GAME_CONSTANTS.PLAYER_BOOST_MAX_SPEED * 0.67 : -GAME_CONSTANTS.PLAYER_MAX_SPEED * 0.75;
       player.speed = Math.max(minSpeed, Math.min(maxSpeed, player.speed));
 
-      player.x += Math.cos(player.angle) * player.speed;
-      player.y += Math.sin(player.angle) * player.speed;
+      // Calculate movement direction
+      const moveX = Math.cos(player.angle) * player.speed;
+      const moveY = Math.sin(player.angle) * player.speed;
+      
+      // Detect drift (when turning while moving fast)
+      const isDrifting = Math.abs(player.speed) > 3 && Math.abs(rotation) > 0.05;
+      const driftIntensity = Math.min(Math.abs(player.speed) * Math.abs(rotation) / 2, 1);
+      
+      // Add drift physics (sideways movement)
+      if (isDrifting && player.speed > 0) {
+        const driftAngle = player.angle + Math.PI / 2;
+        const driftForce = driftIntensity * 0.3;
+        player.x += moveX + Math.cos(driftAngle) * driftForce;
+        player.y += moveY + Math.sin(driftAngle) * driftForce;
+        
+        // Create drift marks (tire tracks)
+        if (Math.random() < 0.4) {
+          driftMarksRef.current.push({
+            x: player.x - Math.cos(player.angle) * 15,
+            y: player.y - Math.sin(player.angle) * 15,
+            angle: player.angle + Math.PI / 2,
+            life: 120,
+            width: 3 + driftIntensity * 2
+          });
+          
+          // Create drift particles
+          for (let i = 0; i < 3; i++) {
+            particlesRef.current.push({
+              x: player.x - Math.cos(player.angle) * 15 + (Math.random() - 0.5) * 10,
+              y: player.y - Math.sin(player.angle) * 15 + (Math.random() - 0.5) * 10,
+              vx: (Math.random() - 0.5) * 2,
+              vy: (Math.random() - 0.5) * 2,
+              life: 20 + Math.random() * 15,
+              color: '#888888'
+            });
+          }
+        }
+      } else {
+        player.x += moveX;
+        player.y += moveY;
+      }
+      
+      // Update drift marks
+      driftMarksRef.current = driftMarksRef.current.filter(mark => {
+        mark.life -= 1;
+        return mark.life > 0;
+      });
 
       // Track player history for prediction (last 10 positions)
       playerHistoryRef.current.push({ x: player.x, y: player.y, time: now });
@@ -1144,30 +1228,74 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       ctx.save();
       ctx.translate(-cameraRef.current.x, -cameraRef.current.y);
 
-      // Draw world background
-      ctx.fillStyle = '#1a1a2e';
+      // Draw world background (asphalt)
+      ctx.fillStyle = '#2a2a3a';
       ctx.fillRect(0, 0, GAME_CONSTANTS.WORLD_WIDTH, GAME_CONSTANTS.WORLD_HEIGHT);
 
-      // Draw road grid in world coordinates (only visible lines)
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 2;
-      const gridStartX = Math.floor(cameraRef.current.x / 100) * 100;
-      const gridEndX = Math.ceil((cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH) / 100) * 100;
-      const gridStartY = Math.floor(cameraRef.current.y / 100) * 100;
-      const gridEndY = Math.ceil((cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT) / 100) * 100;
+      // Draw streets (organized grid)
+      const blockSize = 200;
+      const streetWidth = GAME_CONSTANTS.ROAD_WIDTH;
+      ctx.fillStyle = '#1a1a2a'; // Darker asphalt for streets
       
-      for (let i = gridStartX; i <= gridEndX; i += 100) {
-        ctx.beginPath();
-        ctx.moveTo(i, gridStartY);
-        ctx.lineTo(i, gridEndY);
-        ctx.stroke();
+      // Draw horizontal streets
+      for (let y = 0; y < GAME_CONSTANTS.WORLD_HEIGHT; y += blockSize + streetWidth) {
+        if (y + streetWidth >= cameraRef.current.y - 50 && y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
+          ctx.fillRect(0, y, GAME_CONSTANTS.WORLD_WIDTH, streetWidth);
+        }
       }
-      for (let i = gridStartY; i <= gridEndY; i += 100) {
-        ctx.beginPath();
-        ctx.moveTo(gridStartX, i);
-        ctx.lineTo(gridEndX, i);
-        ctx.stroke();
+      
+      // Draw vertical streets
+      for (let x = 0; x < GAME_CONSTANTS.WORLD_WIDTH; x += blockSize + streetWidth) {
+        if (x + streetWidth >= cameraRef.current.x - 50 && x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50) {
+          ctx.fillRect(x, 0, streetWidth, GAME_CONSTANTS.WORLD_HEIGHT);
+        }
       }
+      
+      // Draw street markings (center lines)
+      ctx.strokeStyle = '#ffff00';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([20, 20]);
+      
+      // Horizontal center lines
+      for (let y = 0; y < GAME_CONSTANTS.WORLD_HEIGHT; y += blockSize + streetWidth) {
+        const centerY = y + streetWidth / 2;
+        if (centerY >= cameraRef.current.y - 50 && centerY <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
+          ctx.beginPath();
+          ctx.moveTo(0, centerY);
+          ctx.lineTo(GAME_CONSTANTS.WORLD_WIDTH, centerY);
+          ctx.stroke();
+        }
+      }
+      
+      // Vertical center lines
+      for (let x = 0; x < GAME_CONSTANTS.WORLD_WIDTH; x += blockSize + streetWidth) {
+        const centerX = x + streetWidth / 2;
+        if (centerX >= cameraRef.current.x - 50 && centerX <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50) {
+          ctx.beginPath();
+          ctx.moveTo(centerX, 0);
+          ctx.lineTo(centerX, GAME_CONSTANTS.WORLD_HEIGHT);
+          ctx.stroke();
+        }
+      }
+      
+      ctx.setLineDash([]);
+      
+      // Draw drift marks (tire tracks)
+      driftMarksRef.current.forEach(mark => {
+        const alpha = mark.life / 120;
+        ctx.strokeStyle = `rgba(100, 100, 100, ${alpha * 0.6})`;
+        ctx.lineWidth = mark.width * alpha;
+        ctx.beginPath();
+        ctx.moveTo(
+          mark.x - Math.cos(mark.angle) * 8,
+          mark.y - Math.sin(mark.angle) * 8
+        );
+        ctx.lineTo(
+          mark.x + Math.cos(mark.angle) * 8,
+          mark.y + Math.sin(mark.angle) * 8
+        );
+        ctx.stroke();
+      });
       
       // Draw particles
       particlesRef.current.forEach(particle => {
@@ -1592,7 +1720,7 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
             <span className="font-bold">Steuerung:</span> Pfeiltasten oder WASD zum Fahren
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            Entkomme der Polizei so lange wie möglich! Sammle ⚡ Boost-Items für temporäre Geschwindigkeitssteigerung!
+            Nutze Drift-Effekte beim schnellen Lenken! Sammle ⚡ Boost-Items für maximale Geschwindigkeit!
           </p>
         </div>
 
