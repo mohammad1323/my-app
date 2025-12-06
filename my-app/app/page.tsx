@@ -38,30 +38,85 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black font-sans relative overflow-hidden">
+      {/* Animated city skyline background */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-gray-800/50 to-transparent">
+          {/* City buildings silhouette */}
+          <svg className="w-full h-full" viewBox="0 0 1200 400" preserveAspectRatio="none">
+            <rect x="0" y="200" width="80" height="200" fill="#1a1a2e" opacity="0.8"/>
+            <rect x="100" y="150" width="100" height="250" fill="#1a1a2e" opacity="0.8"/>
+            <rect x="220" y="180" width="70" height="220" fill="#1a1a2e" opacity="0.8"/>
+            <rect x="310" y="120" width="90" height="280" fill="#1a1a2e" opacity="0.8"/>
+            <rect x="420" y="160" width="80" height="240" fill="#1a1a2e" opacity="0.8"/>
+            <rect x="520" y="140" width="110" height="260" fill="#1a1a2e" opacity="0.8"/>
+            <rect x="650" y="170" width="75" height="230" fill="#1a1a2e" opacity="0.8"/>
+            <rect x="745" y="100" width="95" height="300" fill="#1a1a2e" opacity="0.8"/>
+            <rect x="860" y="180" width="85" height="220" fill="#1a1a2e" opacity="0.8"/>
+            <rect x="965" y="150" width="100" height="250" fill="#1a1a2e" opacity="0.8"/>
+            <rect x="1085" y="190" width="70" height="210" fill="#1a1a2e" opacity="0.8"/>
+          </svg>
+        </div>
+      </div>
+
       {/* Blurred background game */}
-      <div className="absolute inset-0 opacity-30 blur-xl scale-110 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 opacity-25 blur-2xl scale-110 pointer-events-none overflow-hidden">
         <BackgroundGame />
       </div>
 
-      {/* Enhanced gradient overlay */}
+      {/* Enhanced gradient overlay with animated colors */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900/95 via-gray-800/90 to-black/95"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-red-900/10 via-transparent to-blue-900/10 animate-pulse"></div>
 
-      {/* City background pattern - road grid */}
-      <div className="absolute inset-0 opacity-10">
+      {/* Animated road grid with perspective */}
+      <div className="absolute inset-0 opacity-15">
         <div className="absolute inset-0" style={{
           backgroundImage: `
-            repeating-linear-gradient(0deg, transparent, transparent 100px, rgba(255,255,255,0.1) 100px, rgba(255,255,255,0.1) 102px),
-            repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(255,255,255,0.1) 100px, rgba(255,255,255,0.1) 102px)
-          `
+            repeating-linear-gradient(0deg, transparent, transparent 120px, rgba(255,255,255,0.15) 120px, rgba(255,255,255,0.15) 122px),
+            repeating-linear-gradient(90deg, transparent, transparent 120px, rgba(255,255,255,0.15) 120px, rgba(255,255,255,0.15) 122px)
+          `,
+          transform: 'perspective(1000px) rotateX(60deg) scale(1.2)',
+          transformOrigin: 'center center'
         }}></div>
       </div>
 
-      {/* Enhanced police lights effect */}
+      {/* Enhanced police lights effect with movement */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/25 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-red-600/25 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-        <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-1/3 right-0 w-80 h-80 bg-red-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/30 rounded-full blur-3xl animate-pulse" style={{
+          animation: 'float 6s ease-in-out infinite'
+        }}></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-red-600/30 rounded-full blur-3xl animate-pulse" style={{ 
+          animationDelay: '0.5s',
+          animation: 'float 8s ease-in-out infinite'
+        }}></div>
+        <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-blue-500/25 rounded-full blur-3xl animate-pulse" style={{ 
+          animationDelay: '1s',
+          animation: 'float 7s ease-in-out infinite'
+        }}></div>
+        <div className="absolute bottom-1/3 right-0 w-80 h-80 bg-red-500/25 rounded-full blur-3xl animate-pulse" style={{ 
+          animationDelay: '1.5s',
+          animation: 'float 9s ease-in-out infinite'
+        }}></div>
+        {/* Additional moving lights */}
+        <div className="absolute top-1/4 right-1/3 w-64 h-64 bg-yellow-500/20 rounded-full blur-2xl animate-pulse" style={{
+          animation: 'float 10s ease-in-out infinite',
+          animationDelay: '2s'
+        }}></div>
+      </div>
+
+      {/* Animated particles/stars */}
+      <div className="absolute inset-0 overflow-hidden">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-white rounded-full opacity-60"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animation: `twinkle ${2 + Math.random() * 3}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 2}s`
+            }}
+          ></div>
+        ))}
       </div>
 
       <main className="container mx-auto px-4 py-16 relative z-10">
@@ -390,6 +445,24 @@ export default function Home() {
             transform: translateY(0);
           }
         }
+        @keyframes float {
+          0%, 100% {
+            transform: translate(0, 0) scale(1);
+          }
+          50% {
+            transform: translate(30px, -30px) scale(1.1);
+          }
+        }
+        @keyframes twinkle {
+          0%, 100% {
+            opacity: 0.3;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.5);
+          }
+        }
         .animate-fade-in {
           animation: fade-in 1s ease-out;
         }
@@ -550,7 +623,7 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
   const [policeCount, setPoliceCount] = useState(1);
 
   // Game state
-  const playerRef = useRef({ x: 400, y: 300, angle: 0, speed: 0, vx: 0, vy: 0 });
+  const playerRef = useRef({ x: 400, y: 300, angle: 0, speed: 0, vx: 0, vy: 0, boostActive: false, boostTimeLeft: 0 });
   const policeRef = useRef<Array<{ 
     x: number; 
     y: number; 
@@ -562,6 +635,9 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
   }>>([]);
   const buildingsRef = useRef<Array<{ x: number; y: number; width: number; height: number }>>([]);
   const playerHistoryRef = useRef<Array<{ x: number; y: number; time: number }>>([]);
+  const boostsRef = useRef<Array<{ x: number; y: number; id: number; collected: boolean }>>([]);
+  const [boostActive, setBoostActive] = useState(false);
+  const [boostTimeLeft, setBoostTimeLeft] = useState(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -575,8 +651,9 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     canvas.height = 600;
 
     // Initialize player
-    playerRef.current = { x: 400, y: 300, angle: 0, speed: 0, vx: 0, vy: 0 };
+    playerRef.current = { x: 400, y: 300, angle: 0, speed: 0, vx: 0, vy: 0, boostActive: false, boostTimeLeft: 0 };
     playerHistoryRef.current = [];
+    boostsRef.current = [];
 
     // Initialize buildings (city blocks)
     buildingsRef.current = [];
@@ -632,6 +709,51 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       const newStars = Math.floor(elapsed / 5); // 1 star every 5 seconds
       setStars(newStars);
 
+      // Spawn boost items (every 8-12 seconds, max 3 on screen)
+      if (Math.random() < 0.003 && boostsRef.current.filter(b => !b.collected).length < 3) {
+        // Make sure boost doesn't spawn on buildings
+        let validPosition = false;
+        let boostX = 0;
+        let boostY = 0;
+        let attempts = 0;
+        
+        while (!validPosition && attempts < 20) {
+          boostX = 50 + Math.random() * (canvas.width - 100);
+          boostY = 50 + Math.random() * (canvas.height - 100);
+          validPosition = true;
+          
+          // Check if position is clear of buildings
+          for (const building of buildingsRef.current) {
+            if (boostX >= building.x - 30 && boostX <= building.x + building.width + 30 &&
+                boostY >= building.y - 30 && boostY <= building.y + building.height + 30) {
+              validPosition = false;
+              break;
+            }
+          }
+          attempts++;
+        }
+        
+        if (validPosition) {
+          boostsRef.current.push({
+            x: boostX,
+            y: boostY,
+            id: Date.now() + Math.random(),
+            collected: false
+          });
+        }
+      }
+
+      // Update boost timer
+      if (playerRef.current.boostActive) {
+        playerRef.current.boostTimeLeft -= deltaTime / 16;
+        setBoostTimeLeft(Math.max(0, Math.floor(playerRef.current.boostTimeLeft)));
+        
+        if (playerRef.current.boostTimeLeft <= 0) {
+          playerRef.current.boostActive = false;
+          setBoostActive(false);
+        }
+      }
+
       // Spawn more police cars over time
       const targetPoliceCount = 1 + Math.floor(elapsed / 10);
       if (targetPoliceCount > policeRef.current.length && policeRef.current.length < 8) {
@@ -668,7 +790,11 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       player.angle += rotation;
       player.speed += acceleration;
       player.speed *= 0.95; // Friction
-      player.speed = Math.max(-4, Math.min(5, player.speed)); // Max speed
+      
+      // Apply boost speed multiplier
+      const maxSpeed = player.boostActive ? 8 : 5; // Boost doubles max speed
+      const minSpeed = player.boostActive ? -6 : -4;
+      player.speed = Math.max(minSpeed, Math.min(maxSpeed, player.speed));
 
       player.x += Math.cos(player.angle) * player.speed;
       player.y += Math.sin(player.angle) * player.speed;
@@ -678,6 +804,25 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       if (playerHistoryRef.current.length > 10) {
         playerHistoryRef.current.shift();
       }
+
+      // Check boost collection
+      boostsRef.current.forEach(boost => {
+        if (!boost.collected) {
+          const dist = Math.sqrt(
+            Math.pow(player.x - boost.x, 2) + Math.pow(player.y - boost.y, 2)
+          );
+          if (dist < 30) {
+            boost.collected = true;
+            player.boostActive = true;
+            player.boostTimeLeft = 5; // 5 seconds of boost
+            setBoostActive(true);
+            setBoostTimeLeft(5);
+          }
+        }
+      });
+
+      // Remove old collected boosts
+      boostsRef.current = boostsRef.current.filter(b => !b.collected || Date.now() - b.id < 1000);
 
       // Wrap around screen
       if (player.x < 0) player.x = canvas.width;
@@ -825,6 +970,59 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         ctx.strokeStyle = '#34495e';
         ctx.lineWidth = 2;
         ctx.strokeRect(building.x, building.y, building.width, building.height);
+        
+        // Add windows to buildings
+        ctx.fillStyle = '#34495e';
+        for (let wx = building.x + 10; wx < building.x + building.width - 10; wx += 15) {
+          for (let wy = building.y + 10; wy < building.y + building.height - 10; wy += 15) {
+            if (Math.random() > 0.3) {
+              ctx.fillRect(wx, wy, 8, 10);
+            }
+          }
+        }
+        ctx.fillStyle = '#2c3e50';
+      });
+
+      // Draw boost items
+      boostsRef.current.forEach(boost => {
+        if (!boost.collected) {
+          const pulse = Math.sin(Date.now() / 200) * 0.3 + 0.7;
+          
+          // Glow effect
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = '#00ff00';
+          
+          // Outer glow
+          ctx.fillStyle = `rgba(0, 255, 0, ${0.3 * pulse})`;
+          ctx.beginPath();
+          ctx.arc(boost.x, boost.y, 20, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Boost icon (lightning bolt)
+          ctx.save();
+          ctx.translate(boost.x, boost.y);
+          ctx.rotate(Date.now() / 1000);
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#ffff00';
+          ctx.strokeStyle = '#00ff00';
+          ctx.lineWidth = 3;
+          
+          // Draw lightning bolt
+          ctx.beginPath();
+          ctx.moveTo(-8, -15);
+          ctx.lineTo(2, -5);
+          ctx.lineTo(-2, -5);
+          ctx.lineTo(8, 15);
+          ctx.lineTo(-2, 5);
+          ctx.lineTo(2, 5);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          
+          ctx.restore();
+          
+          ctx.shadowBlur = 0;
+        }
       });
 
       // Helper function to draw rounded rectangle
@@ -842,7 +1040,7 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         ctx.closePath();
       };
 
-      // Draw police cars
+      // Draw police cars - enhanced
       policeRef.current.forEach(police => {
         ctx.save();
         ctx.translate(police.x, police.y);
@@ -852,70 +1050,159 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(-14, 10, 28, 8);
         
-        // Police car body (main)
+        // Police car body (main) - enhanced
         ctx.fillStyle = '#1a4d8c';
         drawRoundedRect(-18, -10, 36, 20, 4);
         ctx.fill();
         
-        // White stripe
-        ctx.fillStyle = '#ffffff';
+        // Car details - hood
+        ctx.fillStyle = '#0d3a6b';
+        ctx.fillRect(-18, -10, 36, 6);
+        
+        // White stripe with reflection
+        const stripeGradient = ctx.createLinearGradient(-16, -8, -16, -4);
+        stripeGradient.addColorStop(0, '#ffffff');
+        stripeGradient.addColorStop(1, '#cccccc');
+        ctx.fillStyle = stripeGradient;
         ctx.fillRect(-16, -8, 32, 4);
         ctx.fillRect(-16, 4, 32, 4);
         
-        // Windows
-        ctx.fillStyle = '#87ceeb';
+        // Windows with gradient
+        const windowGradient = ctx.createLinearGradient(-12, -6, -12, 2);
+        windowGradient.addColorStop(0, '#b0e0e6');
+        windowGradient.addColorStop(1, '#87ceeb');
+        ctx.fillStyle = windowGradient;
         ctx.fillRect(-12, -6, 24, 8);
         ctx.strokeStyle = '#2c3e50';
         ctx.lineWidth = 1;
         ctx.strokeRect(-12, -6, 24, 8);
         
-        // Police lights bar (animated)
+        // Window divider
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, -6);
+        ctx.lineTo(0, 2);
+        ctx.stroke();
+        
+        // Police lights bar (animated) - enhanced
         const lightTime = Date.now() % 1000;
+        ctx.shadowBlur = 15;
         if (lightTime < 500) {
+          ctx.shadowColor = '#ff0000';
           ctx.fillStyle = '#ff0000';
           ctx.fillRect(-14, -14, 7, 4);
-        } else {
           ctx.fillStyle = '#0000ff';
           ctx.fillRect(7, -14, 7, 4);
+        } else {
+          ctx.shadowColor = '#0000ff';
+          ctx.fillStyle = '#0000ff';
+          ctx.fillRect(7, -14, 7, 4);
+          ctx.fillStyle = '#ff0000';
+          ctx.fillRect(-14, -14, 7, 4);
         }
+        ctx.shadowBlur = 0;
         
-        // Wheels
+        // Enhanced wheels with rotation
+        const wheelRotation = police.speed * 0.5;
+        ctx.save();
+        ctx.translate(-13, -10);
+        ctx.rotate(wheelRotation);
         ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(-16, -12, 6, 4);
-        ctx.fillRect(10, -12, 6, 4);
-        ctx.fillRect(-16, 8, 6, 4);
-        ctx.fillRect(10, 8, 6, 4);
-        
-        // Wheel rims
+        ctx.fillRect(-3, -2, 6, 4);
         ctx.fillStyle = '#666';
-        ctx.fillRect(-15, -11, 4, 2);
-        ctx.fillRect(11, -11, 4, 2);
-        ctx.fillRect(-15, 9, 4, 2);
-        ctx.fillRect(11, 9, 4, 2);
+        ctx.fillRect(-2, -1, 4, 2);
+        ctx.restore();
+        
+        ctx.save();
+        ctx.translate(13, -10);
+        ctx.rotate(wheelRotation);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(-3, -2, 6, 4);
+        ctx.fillStyle = '#666';
+        ctx.fillRect(-2, -1, 4, 2);
+        ctx.restore();
+        
+        ctx.save();
+        ctx.translate(-13, 10);
+        ctx.rotate(wheelRotation);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(-3, -2, 6, 4);
+        ctx.fillStyle = '#666';
+        ctx.fillRect(-2, -1, 4, 2);
+        ctx.restore();
+        
+        ctx.save();
+        ctx.translate(13, 10);
+        ctx.rotate(wheelRotation);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(-3, -2, 6, 4);
+        ctx.fillStyle = '#666';
+        ctx.fillRect(-2, -1, 4, 2);
+        ctx.restore();
+        
+        // Headlights
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#ffffff';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-18, -4, 3, 3);
+        ctx.fillRect(15, -4, 3, 3);
+        ctx.shadowBlur = 0;
+        
+        // Taillights
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(-18, 1, 3, 3);
+        ctx.fillRect(15, 1, 3, 3);
         
         ctx.restore();
       });
 
-      // Draw player car
+      // Draw player car with boost effect
       ctx.save();
       ctx.translate(player.x, player.y);
       ctx.rotate(player.angle);
+      
+      // Boost glow effect
+      if (player.boostActive) {
+        const boostPulse = Math.sin(Date.now() / 100) * 0.3 + 0.7;
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = '#00ff00';
+        
+        // Outer glow rings
+        for (let i = 0; i < 3; i++) {
+          ctx.strokeStyle = `rgba(0, 255, 0, ${0.3 * boostPulse / (i + 1)})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(0, 0, 25 + i * 5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+      }
       
       // Shadow
       ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
       ctx.fillRect(-14, 10, 28, 8);
       
-      // Player car body (main)
-      ctx.fillStyle = '#c0392b';
+      // Player car body (main) - enhanced
+      ctx.fillStyle = player.boostActive ? '#ff4444' : '#c0392b';
       drawRoundedRect(-18, -10, 36, 20, 4);
       ctx.fill();
       
-      // Car details - hood
-      ctx.fillStyle = '#a93226';
+      // Car details - hood with gradient effect
+      ctx.fillStyle = player.boostActive ? '#cc3333' : '#a93226';
       ctx.fillRect(-18, -10, 36, 6);
       
-      // Windows
-      ctx.fillStyle = '#3498db';
+      // Racing stripe (when boosted)
+      if (player.boostActive) {
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(-2, -10, 4, 20);
+      }
+      
+      // Windows with reflection
+      const gradient = ctx.createLinearGradient(-12, -6, -12, 2);
+      gradient.addColorStop(0, '#5dade2');
+      gradient.addColorStop(1, '#3498db');
+      ctx.fillStyle = gradient;
       ctx.fillRect(-12, -6, 24, 8);
       ctx.strokeStyle = '#2c3e50';
       ctx.lineWidth = 1;
@@ -929,29 +1216,66 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       ctx.lineTo(0, 2);
       ctx.stroke();
       
-      // Wheels
+      // Enhanced wheels with rotation effect
+      const wheelRotation = player.speed * 0.5;
+      ctx.save();
+      ctx.translate(-13, -10);
+      ctx.rotate(wheelRotation);
       ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(-16, -12, 6, 4);
-      ctx.fillRect(10, -12, 6, 4);
-      ctx.fillRect(-16, 8, 6, 4);
-      ctx.fillRect(10, 8, 6, 4);
-      
-      // Wheel rims
+      ctx.fillRect(-3, -2, 6, 4);
       ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(-15, -11, 4, 2);
-      ctx.fillRect(11, -11, 4, 2);
-      ctx.fillRect(-15, 9, 4, 2);
-      ctx.fillRect(11, 9, 4, 2);
+      ctx.fillRect(-2, -1, 4, 2);
+      ctx.restore();
       
-      // Headlights
+      ctx.save();
+      ctx.translate(13, -10);
+      ctx.rotate(wheelRotation);
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(-3, -2, 6, 4);
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(-2, -1, 4, 2);
+      ctx.restore();
+      
+      ctx.save();
+      ctx.translate(-13, 10);
+      ctx.rotate(wheelRotation);
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(-3, -2, 6, 4);
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(-2, -1, 4, 2);
+      ctx.restore();
+      
+      ctx.save();
+      ctx.translate(13, 10);
+      ctx.rotate(wheelRotation);
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(-3, -2, 6, 4);
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(-2, -1, 4, 2);
+      ctx.restore();
+      
+      // Enhanced headlights with glow
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#fffacd';
       ctx.fillStyle = '#fffacd';
       ctx.fillRect(-18, -4, 3, 3);
       ctx.fillRect(15, -4, 3, 3);
+      ctx.shadowBlur = 0;
       
       // Taillights
       ctx.fillStyle = '#ff0000';
       ctx.fillRect(-18, 1, 3, 3);
       ctx.fillRect(15, 1, 3, 3);
+      
+      // Exhaust effect when boosting
+      if (player.boostActive && player.speed > 0) {
+        ctx.fillStyle = '#ff6600';
+        ctx.fillRect(-20, 2, 4, 2);
+        ctx.fillRect(16, 2, 4, 2);
+        ctx.fillStyle = '#ffaa00';
+        ctx.fillRect(-22, 3, 3, 1);
+        ctx.fillRect(17, 3, 3, 1);
+      }
       
       ctx.restore();
 
@@ -995,6 +1319,12 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
               <span className="text-red-400 text-sm">🚓 Polizei: </span>
               <span className="text-white font-bold text-xl">{policeCount}</span>
             </div>
+            {boostActive && (
+              <div className="bg-gray-800 px-4 py-2 rounded-lg border-2 border-green-500 animate-pulse">
+                <span className="text-green-400 text-sm">⚡ Boost: </span>
+                <span className="text-white font-bold text-xl">{boostTimeLeft}s</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1011,7 +1341,7 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
             <span className="font-bold">Steuerung:</span> Pfeiltasten oder WASD zum Fahren
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            Entkomme der Polizei so lange wie möglich! Je länger du überlebst, desto mehr Sterne bekommst du.
+            Entkomme der Polizei so lange wie möglich! Sammle ⚡ Boost-Items für temporäre Geschwindigkeitssteigerung!
           </p>
         </div>
 
