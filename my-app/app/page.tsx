@@ -809,6 +809,9 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       const newStars = Math.floor(elapsed / 5); // 1 star every 5 seconds
       setStars(newStars);
 
+      // Get player reference early
+      const player = playerRef.current;
+
       // Spawn boost items (every 8-12 seconds, max 3 on screen)
       if (Math.random() < 0.003 && boostsRef.current.filter(b => !b.collected).length < 3) {
         // Make sure boost doesn't spawn on buildings - spawn in world coordinates
@@ -881,7 +884,6 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       }
 
       // Update player
-      const player = playerRef.current;
       let acceleration = 0;
       let rotation = 0;
 
