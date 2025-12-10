@@ -2,18 +2,24 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-interface Coin {
+interface Pipe {
   id: number;
-  lane: number;
-  y: number;
-  collected: boolean;
+  x: number;
+  topHeight: number;
+  bottomHeight: number;
+  gap: number;
+  passed: boolean;
+  moving: boolean;
+  moveDirection: number;
+  moveSpeed: number;
 }
 
-interface Obstacle {
+interface Portal {
   id: number;
-  lane: number;
+  x: number;
   y: number;
-  type: 'train' | 'barrier';
+  type: 'entry' | 'exit';
+  pairId: number;
 }
 
 interface Particle {
@@ -25,51 +31,74 @@ interface Particle {
   color: string;
 }
 
+interface Statistics {
+  gamesPlayed: number;
+  bestScore: number;
+  totalCoins: number;
+  totalJumps: number;
+  totalPortals: number;
+}
+
 export default function Home() {
   const [gameState, setGameState] = useState<'menu' | 'playing' | 'gameOver'>('menu');
   const [score, setScore] = useState(0);
-  const [coins, setCoins] = useState(0);
-  const [highScore, setHighScore] = useState(0);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameLoopRef = useRef<number | undefined>(undefined);
   
+  const [statistics, setStatistics] = useState<Statistics>({
+    gamesPlayed: 0,
+    bestScore: 0,
+    totalCoins: 0,
+    totalJumps: 0,
+    totalPortals: 0,
+  });
+  
   // Game state
   const playerRef = useRef({
-    lane: 1, // 0 = left, 1 = middle, 2 = right
-    y: 0,
-    isJumping: false,
-    isRolling: false,
-    jumpVelocity: 0,
-    jumpHeight: 0,
+    x: 100,
+    y: 300,
+    velocity: 0,
+    rotation: 0,
+    doubleJumpAvailable: true,
+    doubleJumpUsed: false,
   });
   
   const gameStateRef = useRef({
-    speed: 5,
-    coins: [] as Coin[],
-    obstacles: [] as Obstacle[],
+    pipes: [] as Pipe[],
+    portals: [] as Portal[],
     particles: [] as Particle[],
-    nextCoinId: 0,
-    nextObstacleId: 0,
-    lastCoinSpawn: 0,
-    lastObstacleSpawn: 0,
+    nextPipeId: 0,
+    nextPortalId: 0,
+    lastPipeSpawn: 0,
+    scrollSpeed: 3,
+    gravity: 0.5,
+    jumpPower: -8,
+    doubleJumpPower: -7,
+    pipeSpawnInterval: 2000,
+    backgroundOffset: 0,
   });
   
-  const keysRef = useRef<{ [key: string]: boolean }>({});
-  
-  const LANE_WIDTH = 120;
   const CANVAS_WIDTH = 400;
   const CANVAS_HEIGHT = 600;
-  const PLAYER_SIZE = 40;
-  const JUMP_HEIGHT = 120;
-  const ROLL_HEIGHT = 20;
+  const PLAYER_SIZE = 30;
+  const PIPE_WIDTH = 60;
+  const MIN_GAP = 150;
+  const MAX_GAP = 200;
   
   useEffect(() => {
-    // Load high score
-    const savedHighScore = localStorage.getItem('subwaySurfersHighScore');
-    if (savedHighScore) {
-      setHighScore(parseInt(savedHighScore, 10));
+    // Load statistics
+    const savedStats = localStorage.getItem('flappyCloneStats');
+    if (savedStats) {
+      setStatistics(JSON.parse(savedStats));
     }
   }, []);
+  
+  useEffect(() => {
+    // Save statistics
+    localStorage.setItem('flappyCloneStats', JSON.stringify(statistics));
+  }, [statistics]);
   
   useEffect(() => {
     if (gameState !== 'playing') return;
@@ -85,103 +114,83 @@ export default function Home() {
     
     // Reset game state
     playerRef.current = {
-      lane: 1,
-      y: CANVAS_HEIGHT - 150,
-      isJumping: false,
-      isRolling: false,
-      jumpVelocity: 0,
-      jumpHeight: 0,
+      x: 100,
+      y: CANVAS_HEIGHT / 2,
+      velocity: 0,
+      rotation: 0,
+      doubleJumpAvailable: true,
+      doubleJumpUsed: false,
     };
     
     gameStateRef.current = {
-      speed: 5,
-      coins: [],
-      obstacles: [],
-      particles: [],
-      nextCoinId: 0,
-      nextObstacleId: 0,
-      lastCoinSpawn: 0,
-      lastObstacleSpawn: 0,
+      pipes: [],
+      portals: [] as Portal[],
+      particles: [] as Particle[],
+      nextPipeId: 0,
+      nextPortalId: 0,
+      lastPipeSpawn: 0,
+      scrollSpeed: 3,
+      gravity: 0.5,
+      jumpPower: -8,
+      doubleJumpPower: -7,
+      pipeSpawnInterval: 2000,
+      backgroundOffset: 0,
     };
     
     setScore(0);
-    setCoins(0);
     
-    // Keyboard handlers
+    // Input handlers
+    let jumpPressed = false;
+    let doubleJumpPressed = false;
+    
+    const handleClick = () => {
+      if (!jumpPressed) {
+        jumpPressed = true;
+        playerRef.current.velocity = gameStateRef.current.jumpPower;
+        playerRef.current.doubleJumpAvailable = true;
+        playerRef.current.doubleJumpUsed = false;
+        setStatistics(prev => ({ ...prev, totalJumps: prev.totalJumps + 1 }));
+      } else if (!doubleJumpPressed && playerRef.current.doubleJumpAvailable && !playerRef.current.doubleJumpUsed) {
+        doubleJumpPressed = true;
+        playerRef.current.velocity = gameStateRef.current.doubleJumpPower;
+        playerRef.current.doubleJumpUsed = true;
+        playerRef.current.doubleJumpAvailable = false;
+        
+        // Create double jump particles
+        for (let i = 0; i < 10; i++) {
+          gameStateRef.current.particles.push({
+            x: playerRef.current.x,
+            y: playerRef.current.y,
+            vx: (Math.random() - 0.5) * 4,
+            vy: (Math.random() - 0.5) * 4,
+            life: 30,
+            color: '#FFD700',
+          });
+        }
+      }
+    };
+    
     const handleKeyDown = (e: KeyboardEvent) => {
-      keysRef.current[e.key.toLowerCase()] = true;
-      
-      // Prevent default for arrow keys
-      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) {
+      if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
         e.preventDefault();
+        handleClick();
       }
     };
     
     const handleKeyUp = (e: KeyboardEvent) => {
-      keysRef.current[e.key.toLowerCase()] = false;
+      if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        jumpPressed = false;
+        doubleJumpPressed = false;
+      }
     };
     
+    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleClick();
+    });
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    
-    // Touch handlers for mobile
-    let touchStartX = 0;
-    let touchStartY = 0;
-    
-    const handleTouchStart = (e: TouchEvent) => {
-      e.preventDefault();
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-    };
-    
-    const handleTouchEnd = (e: TouchEvent) => {
-      e.preventDefault();
-      if (!touchStartX || !touchStartY) return;
-      
-      const touchEndX = e.changedTouches[0].clientX;
-      const touchEndY = e.changedTouches[0].clientY;
-      
-      const diffX = touchStartX - touchEndX;
-      const diffY = touchStartY - touchEndY;
-      
-      if (Math.abs(diffX) > Math.abs(diffY)) {
-        // Horizontal swipe
-        if (diffX > 30) {
-          // Swipe left
-          if (playerRef.current.lane > 0) {
-            playerRef.current.lane--;
-          }
-        } else if (diffX < -30) {
-          // Swipe right
-          if (playerRef.current.lane < 2) {
-            playerRef.current.lane++;
-          }
-        }
-      } else {
-        // Vertical swipe
-        if (diffY > 30) {
-          // Swipe down - roll
-          if (!playerRef.current.isJumping && !playerRef.current.isRolling) {
-            playerRef.current.isRolling = true;
-            setTimeout(() => {
-              playerRef.current.isRolling = false;
-            }, 500);
-          }
-        } else if (diffY < -30) {
-          // Swipe up - jump
-          if (!playerRef.current.isJumping && !playerRef.current.isRolling) {
-            playerRef.current.isJumping = true;
-            playerRef.current.jumpVelocity = -15;
-          }
-        }
-      }
-      
-      touchStartX = 0;
-      touchStartY = 0;
-    };
-    
-    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
     
     let lastTime = Date.now();
     let gameStartTime = Date.now();
@@ -197,150 +206,171 @@ export default function Home() {
       const player = playerRef.current;
       const state = gameStateRef.current;
       
-      // Increase speed over time
-      state.speed = 5 + elapsed * 0.5;
+      // Increase difficulty over time
+      state.scrollSpeed = 3 + elapsed * 0.1;
+      state.pipeSpawnInterval = Math.max(1500, 2000 - elapsed * 10);
       
-      // Update score
-      setScore(Math.floor(elapsed * 10));
+      // Update background scroll
+      state.backgroundOffset += state.scrollSpeed;
+      if (state.backgroundOffset > 100) state.backgroundOffset = 0;
       
-      // Handle player movement
-      if (keysRef.current['arrowleft'] || keysRef.current['a']) {
-        if (player.lane > 0) {
-          player.lane--;
-        }
-      }
-      if (keysRef.current['arrowright'] || keysRef.current['d']) {
-        if (player.lane < 2) {
-          player.lane++;
-        }
-      }
+      // Apply gravity
+      player.velocity += state.gravity;
+      player.y += player.velocity;
       
-      // Handle jump
-      if ((keysRef.current['arrowup'] || keysRef.current['w'] || keysRef.current[' ']) && !player.isJumping && !player.isRolling) {
-        player.isJumping = true;
-        player.jumpVelocity = -15;
+      // Update rotation based on velocity
+      player.rotation = Math.min(Math.max(player.velocity * 3, -30), 30);
+      
+      // Reset double jump when on ground or after some time
+      if (player.y > CANVAS_HEIGHT - 50 || player.y < 50) {
+        player.doubleJumpAvailable = true;
+        player.doubleJumpUsed = false;
       }
       
-      // Handle roll
-      if ((keysRef.current['arrowdown'] || keysRef.current['s']) && !player.isJumping && !player.isRolling) {
-        player.isRolling = true;
-        setTimeout(() => {
-          player.isRolling = false;
-        }, 500);
-      }
-      
-      // Update jump physics
-      if (player.isJumping) {
-        player.jumpVelocity += 0.8; // Gravity
-        player.jumpHeight += player.jumpVelocity;
+      // Spawn pipes
+      if (now - state.lastPipeSpawn > state.pipeSpawnInterval) {
+        const gap = MIN_GAP + Math.random() * (MAX_GAP - MIN_GAP);
+        const topHeight = 50 + Math.random() * (CANVAS_HEIGHT - gap - 200);
+        const bottomHeight = CANVAS_HEIGHT - topHeight - gap;
         
-        if (player.jumpHeight <= 0) {
-          player.jumpHeight = 0;
-          player.jumpVelocity = 0;
-          player.isJumping = false;
-        }
-      }
-      
-      // Spawn coins
-      if (now - state.lastCoinSpawn > 1000) {
-        const lane = Math.floor(Math.random() * 3);
-        state.coins.push({
-          id: state.nextCoinId++,
-          lane,
-          y: -50,
-          collected: false,
-        });
-        state.lastCoinSpawn = now;
-      }
-      
-      // Spawn obstacles
-      if (now - state.lastObstacleSpawn > 2000 - Math.min(elapsed * 50, 1500)) {
-        const lane = Math.floor(Math.random() * 3);
-        const type = Math.random() > 0.5 ? 'train' : 'barrier';
-        state.obstacles.push({
-          id: state.nextObstacleId++,
-          lane,
-          y: -100,
-          type,
-        });
-        state.lastObstacleSpawn = now;
-      }
-      
-      // Update coins
-      state.coins.forEach((coin, index) => {
-        coin.y += state.speed;
+        // Random chance for moving pipe
+        const isMoving = Math.random() > 0.7;
+        const moveDirection = Math.random() > 0.5 ? 1 : -1;
+        const moveSpeed = 0.5 + Math.random() * 1;
         
-        // Check collection
-        if (!coin.collected) {
-          const playerX = CANVAS_WIDTH / 2 + (player.lane - 1) * LANE_WIDTH;
-          const playerY = player.y - player.jumpHeight;
-          const coinX = CANVAS_WIDTH / 2 + (coin.lane - 1) * LANE_WIDTH;
-          const coinY = coin.y;
+        state.pipes.push({
+          id: state.nextPipeId++,
+          x: CANVAS_WIDTH,
+          topHeight,
+          bottomHeight,
+          gap,
+          passed: false,
+          moving: isMoving,
+          moveDirection,
+          moveSpeed,
+        });
+        
+        // Random chance for portal pair
+        if (Math.random() > 0.85) {
+          const portalY1 = topHeight + gap / 2;
+          const portalY2 = CANVAS_HEIGHT / 2 + (Math.random() - 0.5) * 200;
+          const pairId = state.nextPortalId;
           
-          const distance = Math.sqrt(
-            Math.pow(playerX - coinX, 2) + Math.pow(playerY - coinY, 2)
-          );
+          state.portals.push({
+            id: state.nextPortalId++,
+            x: CANVAS_WIDTH + 100,
+            y: portalY1,
+            type: 'entry',
+            pairId,
+          });
           
-          if (distance < 30) {
-            coin.collected = true;
-            setCoins(prev => prev + 1);
-            
-            // Create particle effect
-            for (let i = 0; i < 8; i++) {
-              state.particles.push({
-                x: coinX,
-                y: coinY,
-                vx: (Math.random() - 0.5) * 4,
-                vy: (Math.random() - 0.5) * 4,
-                life: 30,
-                color: '#FFD700',
-              });
-            }
+          state.portals.push({
+            id: state.nextPortalId++,
+            x: CANVAS_WIDTH + 300,
+            y: portalY2,
+            type: 'exit',
+            pairId,
+          });
+        }
+        
+        state.lastPipeSpawn = now;
+      }
+      
+      // Update pipes
+      state.pipes.forEach((pipe, index) => {
+        pipe.x -= state.scrollSpeed;
+        
+        // Move pipe if it's a moving pipe
+        if (pipe.moving) {
+          const centerY = pipe.topHeight + pipe.gap / 2;
+          const newCenterY = centerY + pipe.moveDirection * pipe.moveSpeed;
+          const minY = 100;
+          const maxY = CANVAS_HEIGHT - 100;
+          
+          if (newCenterY < minY || newCenterY > maxY) {
+            pipe.moveDirection *= -1;
+          }
+          
+          const newTopHeight = newCenterY - pipe.gap / 2;
+          if (newTopHeight > 50 && newTopHeight + pipe.gap < CANVAS_HEIGHT - 50) {
+            pipe.topHeight = newTopHeight;
+            pipe.bottomHeight = CANVAS_HEIGHT - pipe.topHeight - pipe.gap;
+          } else {
+            pipe.moveDirection *= -1;
           }
         }
         
-        // Remove off-screen coins
-        if (coin.y > CANVAS_HEIGHT + 50) {
-          state.coins.splice(index, 1);
+        // Check collision
+        if (!pipe.passed && pipe.x < player.x - PLAYER_SIZE / 2) {
+          pipe.passed = true;
+          setScore(prev => prev + 1);
+        }
+        
+        if (pipe.x + PIPE_WIDTH > player.x - PLAYER_SIZE / 2 &&
+            pipe.x < player.x + PLAYER_SIZE / 2) {
+          if (player.y - PLAYER_SIZE / 2 < pipe.topHeight ||
+              player.y + PLAYER_SIZE / 2 > CANVAS_HEIGHT - pipe.bottomHeight) {
+            // Game over
+            setStatistics(prev => ({
+              ...prev,
+              gamesPlayed: prev.gamesPlayed + 1,
+              bestScore: Math.max(prev.bestScore, score + 1),
+            }));
+            setGameState('gameOver');
+            return;
+          }
+        }
+        
+        // Remove off-screen pipes
+        if (pipe.x + PIPE_WIDTH < 0) {
+          state.pipes.splice(index, 1);
         }
       });
       
-      // Update obstacles
-      state.obstacles.forEach((obstacle, index) => {
-        obstacle.y += state.speed;
+      // Update portals
+      state.portals.forEach((portal, index) => {
+        portal.x -= state.scrollSpeed;
         
-        // Check collision
-        if (!player.isRolling || obstacle.type === 'train') {
-          const playerX = CANVAS_WIDTH / 2 + (player.lane - 1) * LANE_WIDTH;
-          const playerY = player.y - player.jumpHeight;
-          const obstacleX = CANVAS_WIDTH / 2 + (obstacle.lane - 1) * LANE_WIDTH;
-          const obstacleY = obstacle.y;
-          
-          // Trains can be jumped over, barriers can be rolled under
-          if (obstacle.type === 'train' && player.isJumping && player.jumpHeight > 60) {
-            // Can jump over train
-          } else if (obstacle.type === 'barrier' && player.isRolling) {
-            // Can roll under barrier
-          } else {
-            const distance = Math.sqrt(
-              Math.pow(playerX - obstacleX, 2) + Math.pow(playerY - obstacleY, 2)
-            );
+        // Check portal collision
+        const dist = Math.sqrt(
+          Math.pow(portal.x - player.x, 2) + Math.pow(portal.y - player.y, 2)
+        );
+        
+        if (dist < 25 && portal.type === 'entry') {
+          // Teleport to exit portal
+          const exitPortal = state.portals.find(p => p.pairId === portal.pairId && p.type === 'exit');
+          if (exitPortal) {
+            player.x = exitPortal.x;
+            player.y = exitPortal.y;
+            player.velocity = 0;
             
-            if (distance < 35) {
-              // Game over
-              if (score > highScore) {
-                setHighScore(score);
-                localStorage.setItem('subwaySurfersHighScore', score.toString());
-              }
-              setGameState('gameOver');
-              return;
+            // Create teleport particles
+            for (let i = 0; i < 20; i++) {
+              gameStateRef.current.particles.push({
+                x: portal.x,
+                y: portal.y,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6,
+                life: 40,
+                color: '#9D4EDD',
+              });
+              gameStateRef.current.particles.push({
+                x: exitPortal.x,
+                y: exitPortal.y,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6,
+                life: 40,
+                color: '#9D4EDD',
+              });
             }
+            
+            setStatistics(prev => ({ ...prev, totalPortals: prev.totalPortals + 1 }));
           }
         }
         
-        // Remove off-screen obstacles
-        if (obstacle.y > CANVAS_HEIGHT + 100) {
-          state.obstacles.splice(index, 1);
+        // Remove off-screen portals
+        if (portal.x + 50 < 0) {
+          state.portals.splice(index, 1);
         }
       });
       
@@ -352,95 +382,95 @@ export default function Home() {
         return particle.life > 0;
       });
       
-      // Draw background
-      const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-      gradient.addColorStop(0, '#87CEEB'); // Sky blue
-      gradient.addColorStop(0.7, '#E0E0E0'); // Light gray
-      gradient.addColorStop(1, '#8B7355'); // Brown
-      ctx.fillStyle = gradient;
+      // Check boundaries
+      if (player.y - PLAYER_SIZE / 2 < 0 || player.y + PLAYER_SIZE / 2 > CANVAS_HEIGHT) {
+        setStatistics(prev => ({
+          ...prev,
+          gamesPlayed: prev.gamesPlayed + 1,
+          bestScore: Math.max(prev.bestScore, score),
+        }));
+        setGameState('gameOver');
+        return;
+      }
+      
+      // Draw sky gradient
+      const skyGradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+      skyGradient.addColorStop(0, '#87CEEB');
+      skyGradient.addColorStop(0.7, '#E0F6FF');
+      skyGradient.addColorStop(1, '#98D8C8');
+      ctx.fillStyle = skyGradient;
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       
-      // Draw tracks (3 lanes)
-      ctx.fillStyle = '#2C2C2C';
-      for (let i = 0; i < 3; i++) {
-        const x = CANVAS_WIDTH / 2 + (i - 1) * LANE_WIDTH - LANE_WIDTH / 2;
-        ctx.fillRect(x, 0, LANE_WIDTH, CANVAS_HEIGHT);
-      }
-      
-      // Draw lane dividers
-      ctx.strokeStyle = '#FFFF00';
-      ctx.lineWidth = 3;
-      ctx.setLineDash([20, 20]);
-      for (let i = 0; i < 2; i++) {
-        const x = CANVAS_WIDTH / 2 + (i - 0.5) * LANE_WIDTH;
+      // Draw clouds
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      for (let i = 0; i < 5; i++) {
+        const cloudX = (i * 150 - state.backgroundOffset * 0.3) % (CANVAS_WIDTH + 100) - 50;
+        const cloudY = 50 + i * 100;
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, CANVAS_HEIGHT);
-        ctx.stroke();
-      }
-      ctx.setLineDash([]);
-      
-      // Draw moving background (parallax effect)
-      const bgOffset = (elapsed * state.speed * 0.3) % 100;
-      ctx.fillStyle = '#555';
-      for (let i = -1; i < CANVAS_HEIGHT / 100 + 1; i++) {
-        ctx.fillRect(50, i * 100 - bgOffset, 20, 40);
-        ctx.fillRect(CANVAS_WIDTH - 70, i * 100 - bgOffset + 50, 20, 40);
+        ctx.arc(cloudX, cloudY, 20, 0, Math.PI * 2);
+        ctx.arc(cloudX + 25, cloudY, 25, 0, Math.PI * 2);
+        ctx.arc(cloudX + 50, cloudY, 20, 0, Math.PI * 2);
+        ctx.fill();
       }
       
-      // Draw coins
-      state.coins.forEach(coin => {
-        if (!coin.collected) {
-          const x = CANVAS_WIDTH / 2 + (coin.lane - 1) * LANE_WIDTH;
-          const y = coin.y;
-          
-          // Rotating coin
-          ctx.save();
-          ctx.translate(x, y);
-          ctx.rotate(elapsed * 3);
-          ctx.fillStyle = '#FFD700';
-          ctx.beginPath();
-          ctx.arc(0, 0, 15, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = '#FFA500';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-          ctx.restore();
-        }
+      // Draw pipes
+      state.pipes.forEach(pipe => {
+        // Top pipe
+        ctx.fillStyle = '#4CAF50';
+        ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
+        ctx.fillStyle = '#2E7D32';
+        ctx.fillRect(pipe.x, pipe.topHeight - 20, PIPE_WIDTH, 20);
+        
+        // Bottom pipe
+        ctx.fillStyle = '#4CAF50';
+        ctx.fillRect(pipe.x, CANVAS_HEIGHT - pipe.bottomHeight, PIPE_WIDTH, pipe.bottomHeight);
+        ctx.fillStyle = '#2E7D32';
+        ctx.fillRect(pipe.x, CANVAS_HEIGHT - pipe.bottomHeight, PIPE_WIDTH, 20);
+        
+        // Pipe highlight
+        ctx.strokeStyle = '#66BB6A';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
+        ctx.strokeRect(pipe.x, CANVAS_HEIGHT - pipe.bottomHeight, PIPE_WIDTH, pipe.bottomHeight);
       });
       
-      // Draw obstacles
-      state.obstacles.forEach(obstacle => {
-        const x = CANVAS_WIDTH / 2 + (obstacle.lane - 1) * LANE_WIDTH;
-        const y = obstacle.y;
+      // Draw portals
+      state.portals.forEach(portal => {
+        const pulse = Math.sin(Date.now() / 200) * 0.3 + 0.7;
+        const color = portal.type === 'entry' ? '#9D4EDD' : '#FF6B9D';
         
-        if (obstacle.type === 'train') {
-          // Draw train
-          ctx.fillStyle = '#8B0000';
-          ctx.fillRect(x - 30, y - 40, 60, 50);
-          ctx.fillStyle = '#000';
-          ctx.fillRect(x - 25, y - 35, 50, 30);
-          ctx.fillStyle = '#FFD700';
-          ctx.fillRect(x - 20, y - 30, 40, 20);
-          
-          // Windows
-          ctx.fillStyle = '#87CEEB';
-          ctx.fillRect(x - 15, y - 25, 10, 10);
-          ctx.fillRect(x + 5, y - 25, 10, 10);
-        } else {
-          // Draw barrier
-          ctx.fillStyle = '#FF4500';
-          ctx.fillRect(x - 25, y - 30, 50, 30);
-          ctx.fillStyle = '#FFFF00';
-          ctx.fillRect(x - 20, y - 25, 40, 5);
-          ctx.fillRect(x - 20, y - 15, 40, 5);
-        }
+        // Outer glow
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = color;
+        ctx.fillStyle = `${color}${Math.floor(pulse * 100).toString(16)}`;
+        ctx.beginPath();
+        ctx.arc(portal.x, portal.y, 30, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner ring
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(portal.x, portal.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Center
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath();
+        ctx.arc(portal.x, portal.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Portal type indicator
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(portal.type === 'entry' ? 'IN' : 'OUT', portal.x, portal.y + 4);
       });
       
       // Draw particles
       state.particles.forEach(particle => {
         ctx.fillStyle = particle.color;
-        ctx.globalAlpha = particle.life / 30;
+        ctx.globalAlpha = particle.life / 40;
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
         ctx.fill();
@@ -448,46 +478,72 @@ export default function Home() {
       ctx.globalAlpha = 1;
       
       // Draw player
-      const playerX = CANVAS_WIDTH / 2 + (player.lane - 1) * LANE_WIDTH;
-      const playerY = player.y - player.jumpHeight;
-      const playerHeight = player.isRolling ? ROLL_HEIGHT : PLAYER_SIZE;
-      
       ctx.save();
-      ctx.translate(playerX, playerY);
+      ctx.translate(player.x, player.y);
+      ctx.rotate(player.rotation * Math.PI / 180);
       
       // Player shadow
       ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
       ctx.beginPath();
-      ctx.ellipse(0, playerHeight / 2 + 5, PLAYER_SIZE * 0.6, PLAYER_SIZE * 0.3, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, PLAYER_SIZE / 2 + 5, PLAYER_SIZE * 0.6, PLAYER_SIZE * 0.3, 0, 0, Math.PI * 2);
       ctx.fill();
       
-      // Player body
-      ctx.fillStyle = '#FF6B6B';
-      ctx.fillRect(-PLAYER_SIZE / 2, -playerHeight / 2, PLAYER_SIZE, playerHeight);
+      // Player body (bird)
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, PLAYER_SIZE / 2, PLAYER_SIZE / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
       
-      // Player details
-      ctx.fillStyle = '#4ECDC4';
-      ctx.fillRect(-PLAYER_SIZE / 2 + 5, -playerHeight / 2 + 5, PLAYER_SIZE - 10, playerHeight - 10);
+      // Wing
+      ctx.fillStyle = '#FFA500';
+      ctx.beginPath();
+      ctx.ellipse(-5, 0, 8, 12, -0.3, 0, Math.PI * 2);
+      ctx.fill();
       
-      // Eyes
+      // Eye
       ctx.fillStyle = '#FFF';
       ctx.beginPath();
-      ctx.arc(-8, -10, 4, 0, Math.PI * 2);
-      ctx.arc(8, -10, 4, 0, Math.PI * 2);
+      ctx.arc(8, -5, 5, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#000';
       ctx.beginPath();
-      ctx.arc(-8, -10, 2, 0, Math.PI * 2);
-      ctx.arc(8, -10, 2, 0, Math.PI * 2);
+      ctx.arc(10, -5, 3, 0, Math.PI * 2);
       ctx.fill();
+      
+      // Beak
+      ctx.fillStyle = '#FF6B35';
+      ctx.beginPath();
+      ctx.moveTo(PLAYER_SIZE / 2, 0);
+      ctx.lineTo(PLAYER_SIZE / 2 + 8, -3);
+      ctx.lineTo(PLAYER_SIZE / 2 + 8, 3);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Double jump indicator
+      if (player.doubleJumpAvailable && !player.doubleJumpUsed) {
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(0, 0, PLAYER_SIZE + 5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
       
       ctx.restore();
       
       // Draw UI
-      ctx.fillStyle = '#FFF';
-      ctx.font = 'bold 24px Arial';
-      ctx.fillText(`Score: ${score}`, 10, 30);
-      ctx.fillText(`Coins: ${coins}`, 10, 60);
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 32px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${score}`, CANVAS_WIDTH / 2, 50);
+      
+      // Double jump indicator text
+      if (player.doubleJumpAvailable && !player.doubleJumpUsed) {
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('DOUBLE JUMP READY', CANVAS_WIDTH / 2, CANVAS_HEIGHT - 20);
+      }
       
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     };
@@ -495,13 +551,14 @@ export default function Home() {
     gameLoopRef.current = requestAnimationFrame(gameLoop);
     
     return () => {
+      canvas.removeEventListener('click', handleClick);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       if (gameLoopRef.current) {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [gameState, score, coins, highScore]);
+  }, [gameState, score]);
   
   const startGame = () => {
     setGameState('playing');
@@ -510,33 +567,48 @@ export default function Home() {
   const resetGame = () => {
     setGameState('menu');
     setScore(0);
-    setCoins(0);
   };
   
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-4">
       {gameState === 'menu' && (
-        <div className="text-center space-y-8">
-          <h1 className="text-6xl md:text-8xl font-black text-white drop-shadow-2xl">
-            SUBWAY SURFERS
-          </h1>
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 border-4 border-white/50">
-            <p className="text-white text-xl mb-4">High Score: {highScore}</p>
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <h1 className="text-6xl md:text-8xl font-black text-white drop-shadow-2xl mb-2">
+              FLAPPY
+            </h1>
+            <h2 className="text-4xl md:text-6xl font-black text-yellow-300 drop-shadow-2xl">
+              CLONE
+            </h2>
+          </div>
+          
+          <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-6 border-4 border-white/50 shadow-2xl">
+            <div className="text-center mb-6">
+              <p className="text-white text-2xl font-bold mb-2">High Score</p>
+              <p className="text-yellow-300 text-4xl font-black">{statistics.bestScore}</p>
+            </div>
+            
             <button
               onClick={startGame}
-              className="px-8 py-4 bg-green-500 hover:bg-green-600 text-white font-bold text-2xl rounded-xl shadow-lg transform hover:scale-105 transition-all"
+              className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold text-2xl rounded-xl shadow-lg transform hover:scale-105 transition-all mb-4"
             >
-              SPIEL STARTEN
+              🎮 SPIEL STARTEN
             </button>
-          </div>
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 border-4 border-white/50 text-white">
-            <h2 className="text-2xl font-bold mb-4">Steuerung:</h2>
-            <ul className="text-left space-y-2">
-              <li>← → / A D - Lanes wechseln</li>
-              <li>↑ / W / Leertaste - Springen</li>
-              <li>↓ / S - Rollen</li>
-              <li>Touch: Wischen für Bewegung</li>
-            </ul>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setShowInstructions(true)}
+                className="py-3 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white font-bold text-lg rounded-xl shadow-lg transform hover:scale-105 transition-all"
+              >
+                📖 Anleitung
+              </button>
+              <button
+                onClick={() => setShowStats(true)}
+                className="py-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-bold text-lg rounded-xl shadow-lg transform hover:scale-105 transition-all"
+              >
+                📊 Statistiken
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -545,38 +617,160 @@ export default function Home() {
         <div className="relative">
           <canvas
             ref={canvasRef}
-            className="border-4 border-white rounded-xl shadow-2xl bg-gray-200"
+            className="border-4 border-white rounded-xl shadow-2xl bg-blue-200"
             style={{ display: 'block' }}
           />
-          <div className="absolute top-4 left-4 text-white font-bold text-xl drop-shadow-lg">
-            Score: {score} | Coins: {coins}
-          </div>
         </div>
       )}
       
       {gameState === 'gameOver' && (
-        <div className="text-center space-y-8 bg-white/20 backdrop-blur-sm rounded-2xl p-8 border-4 border-white/50">
+        <div className="w-full max-w-md bg-white/20 backdrop-blur-lg rounded-3xl p-8 border-4 border-white/50 shadow-2xl text-center space-y-6">
           <h2 className="text-5xl font-black text-white drop-shadow-2xl">GAME OVER</h2>
           <div className="space-y-4 text-white text-xl">
-            <p>Score: {score}</p>
-            <p>Coins: {coins}</p>
-            {score === highScore && score > 0 && (
-              <p className="text-yellow-300 font-bold">🎉 NEUER HIGH SCORE! 🎉</p>
+            <p className="text-3xl font-bold">Score: {score}</p>
+            {score === statistics.bestScore && score > 0 && (
+              <p className="text-yellow-300 font-bold text-2xl">🎉 NEUER HIGH SCORE! 🎉</p>
             )}
           </div>
           <div className="flex gap-4 justify-center">
             <button
               onClick={startGame}
-              className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold text-xl rounded-xl shadow-lg transform hover:scale-105 transition-all"
+              className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold text-xl rounded-xl shadow-lg transform hover:scale-105 transition-all"
             >
-              Nochmal spielen
+              Nochmal
             </button>
             <button
               onClick={resetGame}
-              className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold text-xl rounded-xl shadow-lg transform hover:scale-105 transition-all"
+              className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold text-xl rounded-xl shadow-lg transform hover:scale-105 transition-all"
             >
               Menü
             </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Instructions Modal */}
+      {showInstructions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="relative bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-3xl border-4 border-white shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowInstructions(false)}
+              className="absolute top-4 right-4 w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white font-bold text-xl transition-all duration-300 transform hover:scale-110 z-10"
+            >
+              ×
+            </button>
+            
+            <div className="p-8 text-white">
+              <h2 className="text-4xl font-black text-center mb-6 text-yellow-300 drop-shadow-lg">
+                📖 ANLEITUNG
+              </h2>
+              
+              <div className="space-y-6">
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border-2 border-white/30">
+                  <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                    <span>🔄</span> Doppelsprung
+                  </h3>
+                  <p className="text-lg">
+                    Klicke oder drücke Leertaste/W für den ersten Sprung. 
+                    Klicke erneut für einen zweiten Sprung in der Luft!
+                  </p>
+                </div>
+                
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border-2 border-white/30">
+                  <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                    <span>🌀</span> Portale
+                  </h3>
+                  <p className="text-lg">
+                    Fliege durch lila Portale (IN) um zu den rosa Portalen (OUT) zu teleportieren. 
+                    Nutze sie geschickt, um Hindernissen auszuweichen!
+                  </p>
+                </div>
+                
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border-2 border-white/30">
+                  <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                    <span>🌊</span> Bewegliche Röhren
+                  </h3>
+                  <p className="text-lg">
+                    Manche Röhren bewegen sich auf und ab. Passe deine Flugbahn entsprechend an!
+                  </p>
+                </div>
+                
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border-2 border-white/30">
+                  <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                    <span>🎲</span> Zufällige Maps
+                  </h3>
+                  <p className="text-lg">
+                    Jedes Spiel hat eine einzigartige Anordnung von Röhren, Portalen und Hindernissen!
+                  </p>
+                </div>
+                
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border-2 border-white/30">
+                  <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                    <span>🎯</span> Ziel
+                  </h3>
+                  <p className="text-lg">
+                    Fliege so weit wie möglich und sammle Punkte, indem du Röhren passierst. 
+                    Vermeide Kollisionen mit Röhren und Wänden!
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setShowInstructions(false)}
+                className="w-full mt-6 py-3 bg-white/30 hover:bg-white/40 text-white font-bold text-lg rounded-xl transition-all"
+              >
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Statistics Modal */}
+      {showStats && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="relative bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-3xl border-4 border-white shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowStats(false)}
+              className="absolute top-4 right-4 w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white font-bold text-xl transition-all duration-300 transform hover:scale-110 z-10"
+            >
+              ×
+            </button>
+            
+            <div className="p-8 text-white">
+              <h2 className="text-4xl font-black text-center mb-6 text-yellow-300 drop-shadow-lg">
+                📊 STATISTIKEN
+              </h2>
+              
+              <div className="space-y-4">
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border-2 border-white/30">
+                  <div className="text-xl font-bold mb-1">Spiele gespielt</div>
+                  <div className="text-3xl font-black text-yellow-300">{statistics.gamesPlayed}</div>
+                </div>
+                
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border-2 border-white/30">
+                  <div className="text-xl font-bold mb-1">Bester Score</div>
+                  <div className="text-3xl font-black text-yellow-300">{statistics.bestScore}</div>
+                </div>
+                
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border-2 border-white/30">
+                  <div className="text-xl font-bold mb-1">Gesamte Sprünge</div>
+                  <div className="text-3xl font-black text-yellow-300">{statistics.totalJumps}</div>
+                </div>
+                
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border-2 border-white/30">
+                  <div className="text-xl font-bold mb-1">Portale genutzt</div>
+                  <div className="text-3xl font-black text-yellow-300">{statistics.totalPortals}</div>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setShowStats(false)}
+                className="w-full mt-6 py-3 bg-white/30 hover:bg-white/40 text-white font-bold text-lg rounded-xl transition-all"
+              >
+                Schließen
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Subway Surfers",
-  description: "Endless Runner Spiel - Laufe über die Schienen, sammle Münzen und vermeide Hindernisse!",
+  title: "Flappy Clone",
+  description: "Flappy Bird Klon mit Doppelsprüngen, Portalen, beweglichen Röhren und zufälligen Maps!",
 };
 
 export default function RootLayout({
