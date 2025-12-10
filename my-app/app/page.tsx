@@ -753,8 +753,8 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
   const GAME_CONSTANTS = {
     WORLD_WIDTH: 2400,
     WORLD_HEIGHT: 2400,
-    CANVAS_WIDTH: 800,
-    CANVAS_HEIGHT: 600,
+    CANVAS_WIDTH: 600, // Smaller canvas = more zoom
+    CANVAS_HEIGHT: 450, // Smaller canvas = more zoom
     PLAYER_MAX_SPEED: 8,
     PLAYER_BOOST_MAX_SPEED: 16, // Much faster boost
     PLAYER_ACCELERATION: 0.3,
@@ -767,7 +767,7 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     COLLISION_DISTANCE: 25,
     CAMERA_SMOOTHING: 0.1,
     DRIFT_THRESHOLD: 0.15, // Speed difference for drift detection
-    ROAD_WIDTH: 120,
+    ROAD_WIDTH: 250, // Bigger streets
   };
 
   useEffect(() => {
@@ -801,33 +801,53 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     driftMarksRef.current = [];
 
     // Initialize buildings (city blocks) - organized city layout with streets
+    // Buildings are placed at the edges of streets as obstacles
     buildingsRef.current = [];
     const blockSize = 200;
     const streetWidth = GAME_CONSTANTS.ROAD_WIDTH;
+    const buildingDepth = 50; // How far buildings extend from street edge
     
-    // Create organized city grid with streets
+    // Create organized city grid with streets - buildings at edges
     for (let blockX = 0; blockX < GAME_CONSTANTS.WORLD_WIDTH; blockX += blockSize + streetWidth) {
       for (let blockY = 0; blockY < GAME_CONSTANTS.WORLD_HEIGHT; blockY += blockSize + streetWidth) {
-        // Skip some blocks to create variety
-        if (Math.random() > 0.3) {
+        // Place buildings along the edges of streets
+        // Buildings on the left side of vertical streets (facing the street)
+        if (Math.random() > 0.15 && blockX > 0) {
           buildingsRef.current.push({
-            x: blockX + Math.random() * 20,
-            y: blockY + Math.random() * 20,
-            width: blockSize - 40 + Math.random() * 20,
-            height: blockSize - 40 + Math.random() * 20,
+            x: blockX - buildingDepth, // Left of the street
+            y: blockY + streetWidth / 2 + Math.random() * 20,
+            width: buildingDepth,
+            height: 60 + Math.random() * 80,
+          });
+        }
+        // Buildings on the right side of vertical streets
+        if (Math.random() > 0.15 && blockX + blockSize + streetWidth < GAME_CONSTANTS.WORLD_WIDTH) {
+          buildingsRef.current.push({
+            x: blockX + blockSize + streetWidth, // Right of the street
+            y: blockY + streetWidth / 2 + Math.random() * 20,
+            width: buildingDepth,
+            height: 60 + Math.random() * 80,
+          });
+        }
+        // Buildings on the top side of horizontal streets
+        if (Math.random() > 0.15 && blockY > 0) {
+          buildingsRef.current.push({
+            x: blockX + streetWidth / 2 + Math.random() * 20,
+            y: blockY - buildingDepth, // Top of the street
+            width: 60 + Math.random() * 80,
+            height: buildingDepth,
+          });
+        }
+        // Buildings on the bottom side of horizontal streets
+        if (Math.random() > 0.15 && blockY + blockSize + streetWidth < GAME_CONSTANTS.WORLD_HEIGHT) {
+          buildingsRef.current.push({
+            x: blockX + streetWidth / 2 + Math.random() * 20,
+            y: blockY + blockSize + streetWidth, // Bottom of the street
+            width: 60 + Math.random() * 80,
+            height: buildingDepth,
           });
         }
       }
-    }
-    
-    // Add some random buildings for variety
-    for (let i = 0; i < 20; i++) {
-      buildingsRef.current.push({
-        x: Math.random() * GAME_CONSTANTS.WORLD_WIDTH,
-        y: Math.random() * GAME_CONSTANTS.WORLD_HEIGHT,
-        width: 60 + Math.random() * 100,
-        height: 60 + Math.random() * 120,
-      });
     }
 
     // Initialize police cars with smarter AI
@@ -1068,6 +1088,37 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
 
       // Remove old collected boosts
       boostsRef.current = boostsRef.current.filter(b => !b.collected || Date.now() - b.id < 1000);
+
+      // Check collision with buildings (obstacles)
+      const playerRadius = 18; // Approximate car radius
+      buildingsRef.current.forEach(building => {
+        // Check if player collides with building
+        const playerCenterX = player.x;
+        const playerCenterY = player.y;
+        
+        // Find closest point on building rectangle to player
+        const closestX = Math.max(building.x, Math.min(playerCenterX, building.x + building.width));
+        const closestY = Math.max(building.y, Math.min(playerCenterY, building.y + building.height));
+        
+        // Calculate distance from player to closest point
+        const dx = playerCenterX - closestX;
+        const dy = playerCenterY - closestY;
+        const distanceSq = dx * dx + dy * dy;
+        
+        // If collision detected, push player back
+        if (distanceSq < playerRadius * playerRadius) {
+          const distance = Math.sqrt(distanceSq);
+          if (distance > 0) {
+            // Push player away from building
+            const pushX = (dx / distance) * (playerRadius - distance + 1);
+            const pushY = (dy / distance) * (playerRadius - distance + 1);
+            player.x += pushX;
+            player.y += pushY;
+            // Slow down when hitting building
+            player.speed *= 0.7;
+          }
+        }
+      });
 
       // Keep player within world bounds (no wrap around - open city)
       const margin = 50;
