@@ -2,31 +2,33 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// Vogel-Skins
+// Vogel-Skins + Animation (Flapping)
 const birdSkins = ["yellow", "red", "blue"];
 
 export default function Home() {
   const [gameStarted, setGameStarted] = useState(false);
-  const [selectedSkin, setSelectedSkin] = useState(0); // Index für Vogel-Skin
+  const [selectedSkin, setSelectedSkin] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [score, setScore] = useState(0);
   const [highscore, setHighscore] = useState(0);
   const [isPaused, setPaused] = useState(false);
 
-  // Sound-Elemente
+  // Sounds
   const jumpSound = useRef<HTMLAudioElement>(null);
   const pointSound = useRef<HTMLAudioElement>(null);
   const powerupSound = useRef<HTMLAudioElement>(null);
+  const crashSound = useRef<HTMLAudioElement>(null);
 
+  // Setup Highscore & Sounds
   useEffect(() => {
     const saved = localStorage.getItem("flappy-highscore");
     if (saved) setHighscore(Number(saved));
 
-    // Sounds vorbereiten
-    jumpSound.current = new Audio("/jump.wav"); // eigene Dateien in public/
+    jumpSound.current = new Audio("/jump.wav");
     pointSound.current = new Audio("/point.wav");
     powerupSound.current = new Audio("/powerup.wav");
+    crashSound.current = new Audio("/crash.wav");
   }, []);
 
   useEffect(() => {
@@ -42,20 +44,31 @@ export default function Home() {
     let birdX = 60;
     let birdY = 200;
     let velocity = 0;
-    const gravity = 0.4;
+    const gravity = 0.35;
+    const flapPower = -7;
+    let flapFrame = 0; // Für Flapping Animation
 
-    // Pipes & PowerUps
+    // Pipes
     let pipes: { x: number; gapY: number }[] = [];
-    let powerUps: { x: number; y: number }[] = [];
+    let powerUps: { x: number; y: number; type: "points" | "shield" }[] = [];
     let frame = 0;
+    let pipeSpeed = 2; // Levelprogression
+
+    // Shield
+    let shieldActive = false;
+    let shieldTimer = 0;
+
+    // Boden
+    const groundHeight = 50;
 
     function addPipe() {
-      const gapY = Math.random() * 250 + 100;
+      const gapY = Math.random() * 250 + 120;
       pipes.push({ x: canvas.width, gapY });
 
-      // 20% Chance auf Power-Up zwischen Pipes
-      if (Math.random() < 0.2) {
-        powerUps.push({ x: canvas.width + 30, y: gapY });
+      // 25% Chance für Power-Up
+      if (Math.random() < 0.25) {
+        const type = Math.random() < 0.5 ? "points" : "shield";
+        powerUps.push({ x: canvas.width + 30, y: gapY, type });
       }
     }
 
@@ -65,6 +78,9 @@ export default function Home() {
       pipes = [];
       powerUps = [];
       setScore(0);
+      pipeSpeed = 2;
+      shieldActive = false;
+      shieldTimer = 0;
       frame = 0;
     }
 
@@ -76,32 +92,42 @@ export default function Home() {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // Hintergrund
+      ctx.fillStyle = "#70c5ce";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       // Bird physics
       velocity += gravity;
       birdY += velocity;
+      flapFrame = (flapFrame + 1) % 20;
 
-      // Draw bird
+      // Draw bird (flap animation)
       ctx.fillStyle = birdSkins[selectedSkin];
-      ctx.fillRect(birdX, birdY, 30, 30);
+      const birdHeight = 30 + Math.sin((flapFrame / 20) * Math.PI) * 5;
+      ctx.fillRect(birdX, birdY, 30, birdHeight);
 
       // Add pipes
       if (frame % 120 === 0) addPipe();
       frame++;
+      if (frame % 500 === 0) pipeSpeed += 0.2; // schwieriger
 
-      // Draw pipes
+      // Draw Pipes
       pipes.forEach((pipe) => {
-        pipe.x -= 2;
+        pipe.x -= pipeSpeed;
         ctx.fillStyle = "green";
         ctx.fillRect(pipe.x, 0, 60, pipe.gapY - 90);
-        ctx.fillRect(pipe.x, pipe.gapY + 90, 60, canvas.height);
+        ctx.fillRect(pipe.x, pipe.gapY + 90, 60, canvas.height - pipe.gapY - 90);
 
         // Collision
         if (
           birdX < pipe.x + 60 &&
           birdX + 30 > pipe.x &&
-          (birdY < pipe.gapY - 90 || birdY + 30 > pipe.gapY + 90)
+          (birdY < pipe.gapY - 90 || birdY + birdHeight > pipe.gapY + 90)
         ) {
-          resetGame();
+          if (!shieldActive) {
+            crashSound.current?.play();
+            resetGame();
+          }
         }
 
         // Score
@@ -109,7 +135,6 @@ export default function Home() {
           setScore((prev) => {
             const newScore = prev + 1;
             pointSound.current?.play();
-
             if (newScore > highscore) {
               localStorage.setItem("flappy-highscore", String(newScore));
               setHighscore(newScore);
@@ -121,32 +146,54 @@ export default function Home() {
 
       // Draw Power-Ups
       powerUps.forEach((pu, index) => {
-        pu.x -= 2;
-        ctx.fillStyle = "lime";
+        pu.x -= pipeSpeed;
+        ctx.fillStyle = pu.type === "points" ? "lime" : "cyan";
         ctx.fillRect(pu.x, pu.y - 15, 20, 20);
 
-        // PowerUp collision
         if (
           birdX < pu.x + 20 &&
           birdX + 30 > pu.x &&
           birdY < pu.y + 20 &&
-          birdY + 30 > pu.y
+          birdY + birdHeight > pu.y
         ) {
-          setScore((prev) => {
-            const newScore = prev + 3;
-            if (newScore > highscore) {
-              localStorage.setItem("flappy-highscore", String(newScore));
-              setHighscore(newScore);
-            }
-            return newScore;
-          });
+          if (pu.type === "points") {
+            setScore((prev) => {
+              const newScore = prev + 3;
+              if (newScore > highscore) {
+                localStorage.setItem("flappy-highscore", String(newScore));
+                setHighscore(newScore);
+              }
+              return newScore;
+            });
+          } else if (pu.type === "shield") {
+            shieldActive = true;
+            shieldTimer = 300; // Frames
+          }
           powerupSound.current?.play();
-          powerUps.splice(index, 1); // Power-Up entfernen
+          powerUps.splice(index, 1);
         }
       });
 
-      // Ground / top collision
-      if (birdY > canvas.height - 30 || birdY < 0) resetGame();
+      // Draw Shield
+      if (shieldActive) {
+        ctx.strokeStyle = "cyan";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(birdX + 15, birdY + 15, 20, 0, Math.PI * 2);
+        ctx.stroke();
+        shieldTimer--;
+        if (shieldTimer <= 0) shieldActive = false;
+      }
+
+      // Ground
+      ctx.fillStyle = "#ded895";
+      ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+
+      // Ground collision
+      if (birdY + birdHeight > canvas.height - groundHeight && !shieldActive) {
+        crashSound.current?.play();
+        resetGame();
+      }
 
       requestAnimationFrame(gameLoop);
     }
@@ -154,7 +201,7 @@ export default function Home() {
     gameLoop();
 
     const handleClick = () => {
-      velocity = -7;
+      velocity = flapPower;
       jumpSound.current?.play();
     };
     window.addEventListener("mousedown", handleClick);
@@ -170,10 +217,9 @@ export default function Home() {
     <main className="h-screen flex flex-col items-center justify-center px-6 text-center">
       {!gameStarted ? (
         <>
-          <h1 className="text-6xl font-bold mb-6 drop-shadow-lg">Flappy Bird</h1>
+          <h1 className="text-6xl font-bold mb-6 drop-shadow-lg">Flappy Bird Pro</h1>
           <p className="text-xl mb-10 max-w-lg">
-            Spiele jetzt das legendäre Flappy Bird! Schlage deinen Highscore
-            und entdecke coole Extras wie Power-Ups und Vogel-Skins.
+            Fliege durch die Rohre, sammle Power-Ups und erreiche neue Highscores!
           </p>
 
           <div className="mb-6 flex gap-4">
