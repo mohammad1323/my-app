@@ -740,7 +740,7 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     acceleration: number;
     maxSpeed: number;
   }>>([]);
-  const buildingsRef = useRef<Array<{ x: number; y: number; width: number; height: number }>>([]);
+  const buildingsRef = useRef<Array<{ x: number; y: number; width: number; height: number; buildingHeight: number; color: string }>>([]);
   const playerHistoryRef = useRef<Array<{ x: number; y: number; time: number }>>([]);
   const boostsRef = useRef<Array<{ x: number; y: number; id: number; collected: boolean }>>([]);
   const cameraRef = useRef({ x: 0, y: 0 });
@@ -807,44 +807,70 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     const streetWidth = GAME_CONSTANTS.ROAD_WIDTH;
     const buildingDepth = 50; // How far buildings extend from street edge
     
+    // Color palette for buildings
+    const buildingColors = [
+      '#8B4513', // Brown
+      '#4682B4', // Steel Blue
+      '#2F4F4F', // Dark Slate Gray
+      '#556B2F', // Dark Olive Green
+      '#8B0000', // Dark Red
+      '#483D8B', // Dark Slate Blue
+      '#CD853F', // Peru
+      '#708090', // Slate Gray
+      '#B22222', // Fire Brick
+      '#2E8B57', // Sea Green
+    ];
+    
     // Create organized city grid with streets - buildings at edges
     for (let blockX = 0; blockX < GAME_CONSTANTS.WORLD_WIDTH; blockX += blockSize + streetWidth) {
       for (let blockY = 0; blockY < GAME_CONSTANTS.WORLD_HEIGHT; blockY += blockSize + streetWidth) {
         // Place buildings along the edges of streets
         // Buildings on the left side of vertical streets (facing the street)
         if (Math.random() > 0.15 && blockX > 0) {
+          const buildingHeight = 80 + Math.random() * 150; // 3D height
           buildingsRef.current.push({
             x: blockX - buildingDepth, // Left of the street
             y: blockY + streetWidth / 2 + Math.random() * 20,
             width: buildingDepth,
             height: 60 + Math.random() * 80,
+            buildingHeight: buildingHeight,
+            color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
           });
         }
         // Buildings on the right side of vertical streets
         if (Math.random() > 0.15 && blockX + blockSize + streetWidth < GAME_CONSTANTS.WORLD_WIDTH) {
+          const buildingHeight = 80 + Math.random() * 150;
           buildingsRef.current.push({
             x: blockX + blockSize + streetWidth, // Right of the street
             y: blockY + streetWidth / 2 + Math.random() * 20,
             width: buildingDepth,
             height: 60 + Math.random() * 80,
+            buildingHeight: buildingHeight,
+            color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
           });
         }
         // Buildings on the top side of horizontal streets
         if (Math.random() > 0.15 && blockY > 0) {
+          const buildingHeight = 80 + Math.random() * 150;
           buildingsRef.current.push({
             x: blockX + streetWidth / 2 + Math.random() * 20,
             y: blockY - buildingDepth, // Top of the street
             width: 60 + Math.random() * 80,
             height: buildingDepth,
+            buildingHeight: buildingHeight,
+            color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
           });
         }
         // Buildings on the bottom side of horizontal streets
         if (Math.random() > 0.15 && blockY + blockSize + streetWidth < GAME_CONSTANTS.WORLD_HEIGHT) {
+          const buildingHeight = 80 + Math.random() * 150;
           buildingsRef.current.push({
             x: blockX + streetWidth / 2 + Math.random() * 20,
             y: blockY + blockSize + streetWidth, // Bottom of the street
             width: 60 + Math.random() * 80,
             height: buildingDepth,
+            buildingHeight: buildingHeight,
+            color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
           });
         }
       }
@@ -1279,33 +1305,68 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       ctx.save();
       ctx.translate(-cameraRef.current.x, -cameraRef.current.y);
 
-      // Draw world background (asphalt)
-      ctx.fillStyle = '#2a2a3a';
+      // Draw world background with gradient (grass/ground)
+      const bgGradient = ctx.createLinearGradient(0, 0, GAME_CONSTANTS.WORLD_WIDTH, GAME_CONSTANTS.WORLD_HEIGHT);
+      bgGradient.addColorStop(0, '#2d5016'); // Dark green
+      bgGradient.addColorStop(0.5, '#3a6b1f'); // Medium green
+      bgGradient.addColorStop(1, '#2d5016'); // Dark green
+      ctx.fillStyle = bgGradient;
       ctx.fillRect(0, 0, GAME_CONSTANTS.WORLD_WIDTH, GAME_CONSTANTS.WORLD_HEIGHT);
 
-      // Draw streets (organized grid)
+      // Draw streets (organized grid) with 3D effect
       const blockSize = 200;
       const streetWidth = GAME_CONSTANTS.ROAD_WIDTH;
-      ctx.fillStyle = '#1a1a2a'; // Darker asphalt for streets
       
-      // Draw horizontal streets
+      // Draw horizontal streets with gradient
       for (let y = 0; y < GAME_CONSTANTS.WORLD_HEIGHT; y += blockSize + streetWidth) {
         if (y + streetWidth >= cameraRef.current.y - 50 && y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
+          const streetGradient = ctx.createLinearGradient(0, y, 0, y + streetWidth);
+          streetGradient.addColorStop(0, '#404040'); // Dark gray
+          streetGradient.addColorStop(0.5, '#2a2a2a'); // Very dark gray
+          streetGradient.addColorStop(1, '#404040'); // Dark gray
+          ctx.fillStyle = streetGradient;
           ctx.fillRect(0, y, GAME_CONSTANTS.WORLD_WIDTH, streetWidth);
+          
+          // Add texture (small dots for asphalt)
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          for (let tx = 0; tx < GAME_CONSTANTS.WORLD_WIDTH; tx += 15) {
+            for (let ty = y; ty < y + streetWidth; ty += 15) {
+              if ((tx + ty) % 30 < 15) {
+                ctx.fillRect(tx, ty, 2, 2);
+              }
+            }
+          }
         }
       }
       
-      // Draw vertical streets
+      // Draw vertical streets with gradient
       for (let x = 0; x < GAME_CONSTANTS.WORLD_WIDTH; x += blockSize + streetWidth) {
         if (x + streetWidth >= cameraRef.current.x - 50 && x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50) {
+          const streetGradient = ctx.createLinearGradient(x, 0, x + streetWidth, 0);
+          streetGradient.addColorStop(0, '#404040');
+          streetGradient.addColorStop(0.5, '#2a2a2a');
+          streetGradient.addColorStop(1, '#404040');
+          ctx.fillStyle = streetGradient;
           ctx.fillRect(x, 0, streetWidth, GAME_CONSTANTS.WORLD_HEIGHT);
+          
+          // Add texture
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          for (let tx = x; tx < x + streetWidth; tx += 15) {
+            for (let ty = 0; ty < GAME_CONSTANTS.WORLD_HEIGHT; ty += 15) {
+              if ((tx + ty) % 30 < 15) {
+                ctx.fillRect(tx, ty, 2, 2);
+              }
+            }
+          }
         }
       }
       
-      // Draw street markings (center lines)
+      // Draw street markings (center lines) with glow effect
       ctx.strokeStyle = '#ffff00';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([20, 20]);
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 5;
+      ctx.shadowColor = '#ffff00';
+      ctx.setLineDash([25, 15]);
       
       // Horizontal center lines
       for (let y = 0; y < GAME_CONSTANTS.WORLD_HEIGHT; y += blockSize + streetWidth) {
@@ -1329,7 +1390,44 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         }
       }
       
+      ctx.shadowBlur = 0;
       ctx.setLineDash([]);
+      
+      // Draw sidewalk edges
+      ctx.strokeStyle = '#555555';
+      ctx.lineWidth = 2;
+      for (let y = 0; y < GAME_CONSTANTS.WORLD_HEIGHT; y += blockSize + streetWidth) {
+        const topY = y;
+        const bottomY = y + streetWidth;
+        if (topY >= cameraRef.current.y - 50 && topY <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
+          ctx.beginPath();
+          ctx.moveTo(0, topY);
+          ctx.lineTo(GAME_CONSTANTS.WORLD_WIDTH, topY);
+          ctx.stroke();
+        }
+        if (bottomY >= cameraRef.current.y - 50 && bottomY <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
+          ctx.beginPath();
+          ctx.moveTo(0, bottomY);
+          ctx.lineTo(GAME_CONSTANTS.WORLD_WIDTH, bottomY);
+          ctx.stroke();
+        }
+      }
+      for (let x = 0; x < GAME_CONSTANTS.WORLD_WIDTH; x += blockSize + streetWidth) {
+        const leftX = x;
+        const rightX = x + streetWidth;
+        if (leftX >= cameraRef.current.x - 50 && leftX <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50) {
+          ctx.beginPath();
+          ctx.moveTo(leftX, 0);
+          ctx.lineTo(leftX, GAME_CONSTANTS.WORLD_HEIGHT);
+          ctx.stroke();
+        }
+        if (rightX >= cameraRef.current.x - 50 && rightX <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50) {
+          ctx.beginPath();
+          ctx.moveTo(rightX, 0);
+          ctx.lineTo(rightX, GAME_CONSTANTS.WORLD_HEIGHT);
+          ctx.stroke();
+        }
+      }
       
       // Draw drift marks (tire tracks)
       driftMarksRef.current.forEach(mark => {
@@ -1356,35 +1454,157 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       });
       ctx.globalAlpha = 1;
 
-      // Draw buildings (only those in view)
-      ctx.fillStyle = '#2c3e50';
+      // Helper function for isometric projection (3D to 2D)
+      // Creates a 3D perspective view from above/side
+      const isoProject = (x: number, y: number, z: number) => {
+        // Isometric projection with perspective
+        // Looking from above at an angle
+        const angle = Math.PI / 4; // 45 degree viewing angle
+        const isoX = x + (y * 0.5); // Shift for perspective
+        const isoY = y * 0.5 - z; // Height affects Y position
+        return { x: isoX, y: isoY };
+      };
+
+      // Draw buildings in 3D (only those in view)
       buildingsRef.current.forEach(building => {
         // Only draw if building is in camera view (with margin) - optimized check
-        if (building.x + building.width >= cameraRef.current.x - 100 &&
-            building.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 100 &&
-            building.y + building.height >= cameraRef.current.y - 100 &&
-            building.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 100) {
-          ctx.fillRect(building.x, building.y, building.width, building.height);
-          ctx.strokeStyle = '#34495e';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(building.x, building.y, building.width, building.height);
+        if (building.x + building.width >= cameraRef.current.x - 200 &&
+            building.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 200 &&
+            building.y + building.height >= cameraRef.current.y - 200 &&
+            building.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 200) {
           
-          // Add windows to buildings (cached pattern for performance)
-          ctx.fillStyle = '#34495e';
-          const windowSpacing = 15;
-          const windowSize = 8;
-          for (let wx = building.x + 10; wx < building.x + building.width - 10; wx += windowSpacing) {
-            for (let wy = building.y + 10; wy < building.y + building.height - 10; wy += windowSpacing) {
-              // Use deterministic pattern instead of random for better performance
-              const windowHash = ((wx * 7 + wy * 11) % 100) / 100;
-              if (windowHash > 0.3) {
-                ctx.fillRect(wx, wy, windowSize, 10);
+          const b = building;
+          const isoScale = 0.7; // Scale for isometric view
+          const baseX = b.x;
+          const baseY = b.y;
+          const baseZ = 0;
+          const height = b.buildingHeight * isoScale;
+          
+          // Isometric projection points
+          const p1 = isoProject(baseX, baseY, baseZ);
+          const p2 = isoProject(baseX + b.width, baseY, baseZ);
+          const p3 = isoProject(baseX + b.width, baseY + b.height, baseZ);
+          const p4 = isoProject(baseX, baseY + b.height, baseZ);
+          const p5 = isoProject(baseX, baseY, height);
+          const p6 = isoProject(baseX + b.width, baseY, height);
+          const p7 = isoProject(baseX + b.width, baseY + b.height, height);
+          const p8 = isoProject(baseX, baseY + b.height, height);
+          
+          // Draw building faces (back faces first, then front)
+          // Top face (roof)
+          ctx.fillStyle = b.color;
+          ctx.beginPath();
+          ctx.moveTo(p5.x, p5.y);
+          ctx.lineTo(p6.x, p6.y);
+          ctx.lineTo(p7.x, p7.y);
+          ctx.lineTo(p8.x, p8.y);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Lighter roof color
+          const roofColor = ctx.createLinearGradient(p5.x, p5.y, p7.x, p7.y);
+          roofColor.addColorStop(0, b.color);
+          roofColor.addColorStop(1, adjustBrightness(b.color, 30));
+          ctx.fillStyle = roofColor;
+          ctx.fill();
+          
+          // Right face (side)
+          ctx.fillStyle = adjustBrightness(b.color, -20);
+          ctx.beginPath();
+          ctx.moveTo(p2.x, p2.y);
+          ctx.lineTo(p3.x, p3.y);
+          ctx.lineTo(p7.x, p7.y);
+          ctx.lineTo(p6.x, p6.y);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Left face (side)
+          ctx.fillStyle = adjustBrightness(b.color, -30);
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p4.x, p4.y);
+          ctx.lineTo(p8.x, p8.y);
+          ctx.lineTo(p5.x, p5.y);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Front face (main)
+          ctx.fillStyle = b.color;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.lineTo(p6.x, p6.y);
+          ctx.lineTo(p5.x, p5.y);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Add windows to front face
+          const windowSpacing = 12;
+          const windowSize = 6;
+          const windowColor = Math.random() > 0.5 ? '#FFD700' : '#87CEEB'; // Gold or Sky Blue
+          ctx.fillStyle = windowColor;
+          
+          for (let wx = 5; wx < b.width - 5; wx += windowSpacing) {
+            for (let wy = 5; wy < height / isoScale - 5; wy += windowSpacing) {
+              const windowHash = ((b.x * 7 + b.y * 11 + wx * 13 + wy * 17) % 100) / 100;
+              if (windowHash > 0.25) {
+                const winX = baseX + wx;
+                const winY = baseY;
+                const winZ = wy;
+                const winP1 = isoProject(winX, winY, winZ);
+                const winP2 = isoProject(winX + windowSize, winY, winZ);
+                const winP3 = isoProject(winX + windowSize, winY, winZ + windowSize);
+                const winP4 = isoProject(winX, winY, winZ + windowSize);
+                
+                ctx.beginPath();
+                ctx.moveTo(winP1.x, winP1.y);
+                ctx.lineTo(winP2.x, winP2.y);
+                ctx.lineTo(winP3.x, winP3.y);
+                ctx.lineTo(winP4.x, winP4.y);
+                ctx.closePath();
+                ctx.fill();
               }
             }
           }
-          ctx.fillStyle = '#2c3e50';
+          
+          // Draw building outline
+          ctx.strokeStyle = adjustBrightness(b.color, -40);
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          // Base
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.lineTo(p3.x, p3.y);
+          ctx.lineTo(p4.x, p4.y);
+          ctx.closePath();
+          // Top
+          ctx.moveTo(p5.x, p5.y);
+          ctx.lineTo(p6.x, p6.y);
+          ctx.lineTo(p7.x, p7.y);
+          ctx.lineTo(p8.x, p8.y);
+          ctx.closePath();
+          // Vertical edges
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p5.x, p5.y);
+          ctx.moveTo(p2.x, p2.y);
+          ctx.lineTo(p6.x, p6.y);
+          ctx.moveTo(p3.x, p3.y);
+          ctx.lineTo(p7.x, p7.y);
+          ctx.moveTo(p4.x, p4.y);
+          ctx.lineTo(p8.x, p8.y);
+          ctx.stroke();
         }
       });
+      
+      // Helper function to adjust color brightness
+      function adjustBrightness(color: string, percent: number): string {
+        const num = parseInt(color.replace("#", ""), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+        const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
+        const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+        return "#" + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+      }
 
       // Draw boost items (only those in view)
       boostsRef.current.forEach(boost => {
@@ -1434,149 +1654,188 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         }
       });
 
-      // Helper function to draw rounded rectangle
-      const drawRoundedRect = (x: number, y: number, width: number, height: number, radius: number) => {
+      // Helper function to draw 3D car (isometric style)
+      const draw3DCar = (x: number, y: number, angle: number, color: string, isPolice: boolean = false) => {
+        ctx.save();
+        
+        // Car dimensions
+        const carLength = 36;
+        const carWidth = 20;
+        const carHeight = 12;
+        
+        // Calculate car corners in world space
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const halfLength = carLength / 2;
+        const halfWidth = carWidth / 2;
+        
+        // Car corners (top-down view)
+        const corners = [
+          { x: x - halfLength * cos + halfWidth * sin, y: y - halfLength * sin - halfWidth * cos },
+          { x: x + halfLength * cos + halfWidth * sin, y: y + halfLength * sin - halfWidth * cos },
+          { x: x + halfLength * cos - halfWidth * sin, y: y + halfLength * sin + halfWidth * cos },
+          { x: x - halfLength * cos - halfWidth * sin, y: y - halfLength * sin + halfWidth * cos },
+        ];
+        
+        // Project to isometric
+        const projCorners = corners.map(c => isoProject(c.x, c.y, 0));
+        const projTopCorners = corners.map(c => isoProject(c.x, c.y, carHeight));
+        
+        // Draw shadow (ellipse on ground)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
         ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + width - radius, y);
-        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-        ctx.lineTo(x + width, y + height - radius);
-        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        ctx.lineTo(x + radius, y + height);
-        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.ellipse(x, y, carLength * 0.6, carWidth * 0.4, angle, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw car body (top face)
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(projTopCorners[0].x, projTopCorners[0].y);
+        ctx.lineTo(projTopCorners[1].x, projTopCorners[1].y);
+        ctx.lineTo(projTopCorners[2].x, projTopCorners[2].y);
+        ctx.lineTo(projTopCorners[3].x, projTopCorners[3].y);
         ctx.closePath();
+        ctx.fill();
+        
+        // Draw side faces
+        const sideColor = adjustBrightness(color, -25);
+        ctx.fillStyle = sideColor;
+        
+        // Left side
+        ctx.beginPath();
+        ctx.moveTo(projCorners[0].x, projCorners[0].y);
+        ctx.lineTo(projCorners[3].x, projCorners[3].y);
+        ctx.lineTo(projTopCorners[3].x, projTopCorners[3].y);
+        ctx.lineTo(projTopCorners[0].x, projTopCorners[0].y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Right side
+        ctx.beginPath();
+        ctx.moveTo(projCorners[1].x, projCorners[1].y);
+        ctx.lineTo(projCorners[2].x, projCorners[2].y);
+        ctx.lineTo(projTopCorners[2].x, projTopCorners[2].y);
+        ctx.lineTo(projTopCorners[1].x, projTopCorners[1].y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw front/back faces
+        const frontColor = adjustBrightness(color, -15);
+        ctx.fillStyle = frontColor;
+        
+        // Front
+        ctx.beginPath();
+        ctx.moveTo(projCorners[0].x, projCorners[0].y);
+        ctx.lineTo(projCorners[1].x, projCorners[1].y);
+        ctx.lineTo(projTopCorners[1].x, projTopCorners[1].y);
+        ctx.lineTo(projTopCorners[0].x, projTopCorners[0].y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Back
+        ctx.beginPath();
+        ctx.moveTo(projCorners[2].x, projCorners[2].y);
+        ctx.lineTo(projCorners[3].x, projCorners[3].y);
+        ctx.lineTo(projTopCorners[3].x, projTopCorners[3].y);
+        ctx.lineTo(projTopCorners[2].x, projTopCorners[2].y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw windows (on top face)
+        ctx.fillStyle = 'rgba(135, 206, 235, 0.6)';
+        const windowOffset = 4;
+        const windowLength = carLength * 0.5;
+        const windowWidth = carWidth * 0.4;
+        
+        const windowCorners = [
+          { x: x - windowLength * cos * 0.3 + windowWidth * sin * 0.5, y: y - windowLength * sin * 0.3 - windowWidth * cos * 0.5 },
+          { x: x + windowLength * cos * 0.3 + windowWidth * sin * 0.5, y: y + windowLength * sin * 0.3 - windowWidth * cos * 0.5 },
+          { x: x + windowLength * cos * 0.3 - windowWidth * sin * 0.5, y: y + windowLength * sin * 0.3 + windowWidth * cos * 0.5 },
+          { x: x - windowLength * cos * 0.3 - windowWidth * sin * 0.5, y: y - windowLength * sin * 0.3 + windowWidth * cos * 0.5 },
+        ];
+        
+        const projWindowCorners = windowCorners.map(c => isoProject(c.x, c.y, carHeight + 1));
+        ctx.beginPath();
+        ctx.moveTo(projWindowCorners[0].x, projWindowCorners[0].y);
+        ctx.lineTo(projWindowCorners[1].x, projWindowCorners[1].y);
+        ctx.lineTo(projWindowCorners[2].x, projWindowCorners[2].y);
+        ctx.lineTo(projWindowCorners[3].x, projWindowCorners[3].y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw wheels (4 wheels)
+        const wheelRadius = 4;
+        const wheelPositions = [
+          { x: x - halfLength * 0.6 * cos + halfWidth * sin, y: y - halfLength * 0.6 * sin - halfWidth * cos },
+          { x: x + halfLength * 0.6 * cos + halfWidth * sin, y: y + halfLength * 0.6 * sin - halfWidth * cos },
+          { x: x - halfLength * 0.6 * cos - halfWidth * sin, y: y - halfLength * 0.6 * sin + halfWidth * cos },
+          { x: x + halfLength * 0.6 * cos - halfWidth * sin, y: y + halfLength * 0.6 * sin + halfWidth * cos },
+        ];
+        
+        wheelPositions.forEach(wheel => {
+          const wheelProj = isoProject(wheel.x, wheel.y, 0);
+          ctx.fillStyle = '#1a1a1a';
+          ctx.beginPath();
+          ctx.arc(wheelProj.x, wheelProj.y, wheelRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#444';
+          ctx.beginPath();
+          ctx.arc(wheelProj.x, wheelProj.y, wheelRadius * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        
+        // Police lights
+        if (isPolice) {
+          const lightTime = Date.now() % 1000;
+          const lightColor1 = lightTime < 500 ? '#ff0000' : '#0000ff';
+          const lightColor2 = lightTime < 500 ? '#0000ff' : '#ff0000';
+          
+          const lightPos1 = { x: x - halfLength * 0.4 * cos, y: y - halfLength * 0.4 * sin };
+          const lightPos2 = { x: x + halfLength * 0.4 * cos, y: y + halfLength * 0.4 * sin };
+          
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = lightColor1;
+          ctx.fillStyle = lightColor1;
+          const lightProj1 = isoProject(lightPos1.x, lightPos1.y, carHeight + 2);
+          ctx.beginPath();
+          ctx.arc(lightProj1.x, lightProj1.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.shadowColor = lightColor2;
+          ctx.fillStyle = lightColor2;
+          const lightProj2 = isoProject(lightPos2.x, lightPos2.y, carHeight + 2);
+          ctx.beginPath();
+          ctx.arc(lightProj2.x, lightProj2.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+        
+        // Car outline
+        ctx.strokeStyle = adjustBrightness(color, -40);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(projTopCorners[0].x, projTopCorners[0].y);
+        ctx.lineTo(projTopCorners[1].x, projTopCorners[1].y);
+        ctx.lineTo(projTopCorners[2].x, projTopCorners[2].y);
+        ctx.lineTo(projTopCorners[3].x, projTopCorners[3].y);
+        ctx.closePath();
+        ctx.stroke();
+        
+        ctx.restore();
       };
 
-      // Draw police cars - enhanced (only those in view)
+      // Draw police cars in 3D (only those in view)
       policeRef.current.forEach(police => {
         // Only draw if police is in camera view
         if (police.x >= cameraRef.current.x - 50 &&
             police.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50 &&
             police.y >= cameraRef.current.y - 50 &&
             police.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
-        ctx.save();
-        ctx.translate(police.x, police.y);
-        ctx.rotate(police.angle);
-        
-        // Shadow
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        ctx.fillRect(-14, 10, 28, 8);
-        
-        // Police car body (main) - enhanced
-        ctx.fillStyle = '#1a4d8c';
-        drawRoundedRect(-18, -10, 36, 20, 4);
-        ctx.fill();
-        
-        // Car details - hood
-        ctx.fillStyle = '#0d3a6b';
-        ctx.fillRect(-18, -10, 36, 6);
-        
-        // White stripe with reflection
-        const stripeGradient = ctx.createLinearGradient(-16, -8, -16, -4);
-        stripeGradient.addColorStop(0, '#ffffff');
-        stripeGradient.addColorStop(1, '#cccccc');
-        ctx.fillStyle = stripeGradient;
-        ctx.fillRect(-16, -8, 32, 4);
-        ctx.fillRect(-16, 4, 32, 4);
-        
-        // Windows with gradient
-        const windowGradient = ctx.createLinearGradient(-12, -6, -12, 2);
-        windowGradient.addColorStop(0, '#b0e0e6');
-        windowGradient.addColorStop(1, '#87ceeb');
-        ctx.fillStyle = windowGradient;
-        ctx.fillRect(-12, -6, 24, 8);
-        ctx.strokeStyle = '#2c3e50';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(-12, -6, 24, 8);
-        
-        // Window divider
-        ctx.strokeStyle = '#2c3e50';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, -6);
-        ctx.lineTo(0, 2);
-        ctx.stroke();
-        
-        // Police lights bar (animated) - enhanced
-        const lightTime = Date.now() % 1000;
-        ctx.shadowBlur = 15;
-        if (lightTime < 500) {
-          ctx.shadowColor = '#ff0000';
-          ctx.fillStyle = '#ff0000';
-          ctx.fillRect(-14, -14, 7, 4);
-          ctx.fillStyle = '#0000ff';
-          ctx.fillRect(7, -14, 7, 4);
-        } else {
-          ctx.shadowColor = '#0000ff';
-          ctx.fillStyle = '#0000ff';
-          ctx.fillRect(7, -14, 7, 4);
-          ctx.fillStyle = '#ff0000';
-          ctx.fillRect(-14, -14, 7, 4);
-        }
-        ctx.shadowBlur = 0;
-        
-        // Enhanced wheels with rotation
-        const wheelRotation = police.speed * 0.5;
-        ctx.save();
-        ctx.translate(-13, -10);
-        ctx.rotate(wheelRotation);
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(-3, -2, 6, 4);
-        ctx.fillStyle = '#666';
-        ctx.fillRect(-2, -1, 4, 2);
-        ctx.restore();
-        
-        ctx.save();
-        ctx.translate(13, -10);
-        ctx.rotate(wheelRotation);
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(-3, -2, 6, 4);
-        ctx.fillStyle = '#666';
-        ctx.fillRect(-2, -1, 4, 2);
-        ctx.restore();
-        
-        ctx.save();
-        ctx.translate(-13, 10);
-        ctx.rotate(wheelRotation);
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(-3, -2, 6, 4);
-        ctx.fillStyle = '#666';
-        ctx.fillRect(-2, -1, 4, 2);
-        ctx.restore();
-        
-        ctx.save();
-        ctx.translate(13, 10);
-        ctx.rotate(wheelRotation);
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(-3, -2, 6, 4);
-        ctx.fillStyle = '#666';
-        ctx.fillRect(-2, -1, 4, 2);
-        ctx.restore();
-        
-        // Headlights
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = '#ffffff';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-18, -4, 3, 3);
-        ctx.fillRect(15, -4, 3, 3);
-        ctx.shadowBlur = 0;
-        
-        // Taillights
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(-18, 1, 3, 3);
-        ctx.fillRect(15, 1, 3, 3);
-        
-        ctx.restore();
+          draw3DCar(police.x, police.y, police.angle, '#1a4d8c', true);
         }
       });
 
-      // Draw player car with boost effect
-      ctx.save();
-      ctx.translate(player.x, player.y);
-      ctx.rotate(player.angle);
-      
+      // Draw player car in 3D with boost effect
       // Boost glow effect
       if (player.boostActive) {
         const boostPulse = Math.sin(Date.now() / 100) * 0.3 + 0.7;
@@ -1588,110 +1847,33 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
           ctx.strokeStyle = `rgba(0, 255, 0, ${0.3 * boostPulse / (i + 1)})`;
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(0, 0, 25 + i * 5, 0, Math.PI * 2);
+          const glowProj = isoProject(player.x, player.y, 0);
+          ctx.arc(glowProj.x, glowProj.y, 25 + i * 5, 0, Math.PI * 2);
           ctx.stroke();
         }
         ctx.shadowBlur = 0;
       }
       
-      // Shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-      ctx.fillRect(-14, 10, 28, 8);
+      // Draw player car in 3D
+      const playerColor = player.boostActive ? '#ff4444' : '#c0392b';
+      draw3DCar(player.x, player.y, player.angle, playerColor, false);
       
-      // Player car body (main) - enhanced
-      ctx.fillStyle = player.boostActive ? '#ff4444' : '#c0392b';
-      drawRoundedRect(-18, -10, 36, 20, 4);
-      ctx.fill();
-      
-      // Car details - hood with gradient effect
-      ctx.fillStyle = player.boostActive ? '#cc3333' : '#a93226';
-      ctx.fillRect(-18, -10, 36, 6);
-      
-      // Racing stripe (when boosted)
+      // Add boost stripe effect on top
       if (player.boostActive) {
+        ctx.save();
+        const cos = Math.cos(player.angle);
+        const sin = Math.sin(player.angle);
+        const stripePos = { x: player.x, y: player.y };
+        const stripeProj = isoProject(stripePos.x, stripePos.y, 14);
         ctx.fillStyle = '#ffff00';
-        ctx.fillRect(-2, -10, 4, 20);
+        ctx.beginPath();
+        ctx.ellipse(stripeProj.x, stripeProj.y, 18, 2, player.angle, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       }
-      
-      // Windows with reflection
-      const gradient = ctx.createLinearGradient(-12, -6, -12, 2);
-      gradient.addColorStop(0, '#5dade2');
-      gradient.addColorStop(1, '#3498db');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(-12, -6, 24, 8);
-      ctx.strokeStyle = '#2c3e50';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(-12, -6, 24, 8);
-      
-      // Window divider
-      ctx.strokeStyle = '#2c3e50';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, -6);
-      ctx.lineTo(0, 2);
-      ctx.stroke();
-      
-      // Enhanced wheels with rotation effect
-      const wheelRotation = player.speed * 0.5;
-      ctx.save();
-      ctx.translate(-13, -10);
-      ctx.rotate(wheelRotation);
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(-3, -2, 6, 4);
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(-2, -1, 4, 2);
-      ctx.restore();
-      
-      ctx.save();
-      ctx.translate(13, -10);
-      ctx.rotate(wheelRotation);
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(-3, -2, 6, 4);
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(-2, -1, 4, 2);
-      ctx.restore();
-      
-      ctx.save();
-      ctx.translate(-13, 10);
-      ctx.rotate(wheelRotation);
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(-3, -2, 6, 4);
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(-2, -1, 4, 2);
-      ctx.restore();
-      
-      ctx.save();
-      ctx.translate(13, 10);
-      ctx.rotate(wheelRotation);
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(-3, -2, 6, 4);
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(-2, -1, 4, 2);
-      ctx.restore();
-      
-      // Enhanced headlights with glow
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = '#fffacd';
-      ctx.fillStyle = '#fffacd';
-      ctx.fillRect(-18, -4, 3, 3);
-      ctx.fillRect(15, -4, 3, 3);
-      ctx.shadowBlur = 0;
-      
-      // Taillights
-      ctx.fillStyle = '#ff0000';
-      ctx.fillRect(-18, 1, 3, 3);
-      ctx.fillRect(15, 1, 3, 3);
       
       // Exhaust effect when boosting
       if (player.boostActive && player.speed > 0) {
-        ctx.fillStyle = '#ff6600';
-        ctx.fillRect(-20, 2, 4, 2);
-        ctx.fillRect(16, 2, 4, 2);
-        ctx.fillStyle = '#ffaa00';
-        ctx.fillRect(-22, 3, 3, 1);
-        ctx.fillRect(17, 3, 3, 1);
-        
-        // Add exhaust particles
         if (Math.random() < 0.3) {
           particlesRef.current.push({
             x: player.x - Math.cos(player.angle) * 20,
@@ -1703,8 +1885,6 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
           });
         }
       }
-      
-      ctx.restore();
 
       // Restore camera transform
       ctx.restore();
