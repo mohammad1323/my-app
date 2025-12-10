@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dodge Car",
-  description: "Entkomme der Polizei in diesem actionreichen Dodge Car Spiel mit Drift-Effekten",
+  title: "Subway Surfers",
+  description: "Endless Runner Spiel - Laufe über die Schienen, sammle Münzen und vermeide Hindernisse!",
 };
 
 export default function RootLayout({
