@@ -84,8 +84,9 @@ export default function Home() {
   const CANVAS_HEIGHT = 600;
   const PLAYER_SIZE = 30;
   const PIPE_WIDTH = 60;
-  const MIN_GAP = 150;
-  const MAX_GAP = 200;
+  const MIN_GAP = 200; // Größere Lücken für leichteres Durchkommen
+  const MAX_GAP = 250;
+  const COLLISION_MARGIN = 8; // Verkleinerter Kollisionsbereich
   
   useEffect(() => {
     // Load statistics
@@ -306,10 +307,11 @@ export default function Home() {
           setScore(prev => prev + 1);
         }
         
-        if (pipe.x + PIPE_WIDTH > player.x - PLAYER_SIZE / 2 &&
-            pipe.x < player.x + PLAYER_SIZE / 2) {
-          if (player.y - PLAYER_SIZE / 2 < pipe.topHeight ||
-              player.y + PLAYER_SIZE / 2 > CANVAS_HEIGHT - pipe.bottomHeight) {
+        // Verkleinerter Kollisionsbereich für leichteres Durchkommen
+        if (pipe.x + PIPE_WIDTH > player.x - (PLAYER_SIZE / 2 - COLLISION_MARGIN) &&
+            pipe.x < player.x + (PLAYER_SIZE / 2 - COLLISION_MARGIN)) {
+          if (player.y - (PLAYER_SIZE / 2 - COLLISION_MARGIN) < pipe.topHeight ||
+              player.y + (PLAYER_SIZE / 2 - COLLISION_MARGIN) > CANVAS_HEIGHT - pipe.bottomHeight) {
             // Game over
             setStatistics(prev => ({
               ...prev,
@@ -570,44 +572,178 @@ export default function Home() {
   };
   
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-4 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Floating clouds */}
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute bg-white/30 rounded-full blur-xl animate-float"
+            style={{
+              width: `${100 + i * 30}px`,
+              height: `${60 + i * 20}px`,
+              left: `${(i * 15) % 100}%`,
+              top: `${(i * 20) % 100}%`,
+              animationDelay: `${i * 0.5}s`,
+              animationDuration: `${8 + i * 2}s`,
+            }}
+          />
+        ))}
+        
+        {/* Animated birds */}
+        {[...Array(3)].map((_, i) => (
+          <div
+            key={`bird-${i}`}
+            className="absolute text-4xl animate-fly"
+            style={{
+              left: `${-50 + i * 200}px`,
+              top: `${100 + i * 150}px`,
+              animationDelay: `${i * 2}s`,
+              animationDuration: '15s',
+            }}
+          >
+            🐦
+          </div>
+        ))}
+        
+        {/* Floating particles */}
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={`particle-${i}`}
+            className="absolute w-2 h-2 bg-yellow-300 rounded-full animate-twinkle opacity-60"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${2 + Math.random() * 2}s`,
+            }}
+          />
+        ))}
+      </div>
+      
       {gameState === 'menu' && (
-        <div className="w-full max-w-md space-y-6">
-          <div className="text-center">
-            <h1 className="text-6xl md:text-8xl font-black text-white drop-shadow-2xl mb-2">
+        <div className="w-full max-w-md space-y-6 relative z-10">
+          {/* Animated Title */}
+          <div className="text-center relative">
+            <div className="absolute inset-0 blur-2xl opacity-50">
+              <h1 className="text-6xl md:text-8xl font-black text-white mb-2 animate-pulse">
+                FLAPPY
+              </h1>
+              <h2 className="text-4xl md:text-6xl font-black text-yellow-300 animate-pulse" style={{ animationDelay: '0.3s' }}>
+                CLONE
+              </h2>
+            </div>
+            <h1 className="text-6xl md:text-8xl font-black text-white drop-shadow-2xl mb-2 relative animate-bounce" style={{ animationDuration: '2s' }}>
               FLAPPY
             </h1>
-            <h2 className="text-4xl md:text-6xl font-black text-yellow-300 drop-shadow-2xl">
+            <h2 className="text-4xl md:text-6xl font-black text-yellow-300 drop-shadow-2xl relative animate-bounce" style={{ animationDuration: '2s', animationDelay: '0.1s' }}>
               CLONE
             </h2>
+            <div className="mt-4 flex justify-center gap-2">
+              <span className="text-3xl animate-bounce" style={{ animationDelay: '0s', animationDuration: '1.5s' }}>🐦</span>
+              <span className="text-3xl animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1.5s' }}>🚀</span>
+              <span className="text-3xl animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1.5s' }}>⭐</span>
+            </div>
           </div>
           
-          <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-6 border-4 border-white/50 shadow-2xl">
-            <div className="text-center mb-6">
-              <p className="text-white text-2xl font-bold mb-2">High Score</p>
-              <p className="text-yellow-300 text-4xl font-black">{statistics.bestScore}</p>
+          {/* Main Card */}
+          <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 border-4 border-white/50 shadow-2xl relative overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-300/20 rounded-full blur-3xl -mr-16 -mt-16 animate-pulse" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-300/20 rounded-full blur-3xl -ml-16 -mb-16 animate-pulse" style={{ animationDelay: '1s' }} />
+            
+            {/* High Score Display */}
+            <div className="text-center mb-8 relative">
+              <div className="inline-block bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-2xl p-6 shadow-xl transform hover:scale-105 transition-all">
+                <p className="text-white text-xl font-bold mb-2 flex items-center justify-center gap-2">
+                  <span className="text-2xl">🏆</span>
+                  High Score
+                </p>
+                <p className="text-yellow-100 text-5xl font-black drop-shadow-lg">
+                  {statistics.bestScore}
+                </p>
+              </div>
             </div>
             
+            {/* Play Button */}
             <button
               onClick={startGame}
-              className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold text-2xl rounded-xl shadow-lg transform hover:scale-105 transition-all mb-4"
+              className="w-full py-5 bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 hover:from-green-600 hover:via-emerald-600 hover:to-green-700 text-white font-black text-2xl rounded-2xl shadow-2xl transform hover:scale-105 hover:shadow-green-500/50 transition-all duration-300 mb-6 relative overflow-hidden group"
             >
-              🎮 SPIEL STARTEN
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
+              <span className="relative flex items-center justify-center gap-3">
+                <span className="text-3xl animate-bounce" style={{ animationDuration: '1s' }}>🎮</span>
+                <span>SPIEL STARTEN</span>
+                <span className="text-3xl animate-bounce" style={{ animationDuration: '1s', animationDelay: '0.5s' }}>🚀</span>
+              </span>
             </button>
             
+            {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => setShowInstructions(true)}
-                className="py-3 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white font-bold text-lg rounded-xl shadow-lg transform hover:scale-105 transition-all"
+                className="py-4 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:from-blue-600 hover:via-cyan-600 hover:to-blue-700 text-white font-bold text-lg rounded-xl shadow-lg transform hover:scale-105 hover:shadow-blue-500/50 transition-all duration-300 relative overflow-hidden group"
               >
-                📖 Anleitung
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></span>
+                <span className="relative flex flex-col items-center gap-1">
+                  <span className="text-2xl">📖</span>
+                  <span>Anleitung</span>
+                </span>
               </button>
               <button
                 onClick={() => setShowStats(true)}
-                className="py-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-bold text-lg rounded-xl shadow-lg transform hover:scale-105 transition-all"
+                className="py-4 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 hover:from-purple-600 hover:via-pink-600 hover:to-purple-700 text-white font-bold text-lg rounded-xl shadow-lg transform hover:scale-105 hover:shadow-pink-500/50 transition-all duration-300 relative overflow-hidden group"
               >
-                📊 Statistiken
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></span>
+                <span className="relative flex flex-col items-center gap-1">
+                  <span className="text-2xl">📊</span>
+                  <span>Statistiken</span>
+                </span>
               </button>
+            </div>
+            
+            {/* Quick Stats */}
+            <div className="mt-6 pt-6 border-t-2 border-white/30">
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+                  <div className="text-2xl mb-1">🎯</div>
+                  <div className="text-white text-sm font-bold">{statistics.gamesPlayed}</div>
+                  <div className="text-white/80 text-xs">Spiele</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+                  <div className="text-2xl mb-1">🔄</div>
+                  <div className="text-white text-sm font-bold">{statistics.totalJumps}</div>
+                  <div className="text-white/80 text-xs">Sprünge</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+                  <div className="text-2xl mb-1">🌀</div>
+                  <div className="text-white text-sm font-bold">{statistics.totalPortals}</div>
+                  <div className="text-white/80 text-xs">Portale</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Feature Highlights */}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border-2 border-white/30">
+            <div className="flex items-center justify-around text-white text-sm">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-xl">🔄</span>
+                <span className="font-bold">Doppelsprung</span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-xl">🌀</span>
+                <span className="font-bold">Portale</span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-xl">🌊</span>
+                <span className="font-bold">Beweglich</span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-xl">🎲</span>
+                <span className="font-bold">Zufällig</span>
+              </div>
             </div>
           </div>
         </div>
