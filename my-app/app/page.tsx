@@ -302,17 +302,32 @@ export default function Home() {
         }
         
         // Check collision
-        if (!pipe.passed && pipe.x < player.x - PLAYER_SIZE / 2) {
+        if (!pipe.passed && pipe.x + PIPE_WIDTH < player.x - PLAYER_SIZE / 2) {
           pipe.passed = true;
           setScore(prev => prev + 1);
         }
         
-        // Verkleinerter Kollisionsbereich für leichteres Durchkommen
-        if (pipe.x + PIPE_WIDTH > player.x - (PLAYER_SIZE / 2 - COLLISION_MARGIN) &&
-            pipe.x < player.x + (PLAYER_SIZE / 2 - COLLISION_MARGIN)) {
-          if (player.y - (PLAYER_SIZE / 2 - COLLISION_MARGIN) < pipe.topHeight ||
-              player.y + (PLAYER_SIZE / 2 - COLLISION_MARGIN) > CANVAS_HEIGHT - pipe.bottomHeight) {
-            // Game over
+        // Präzise Kollisionserkennung - nur wenn Spieler tatsächlich die Röhre berührt
+        const playerLeft = player.x - PLAYER_SIZE / 2 + COLLISION_MARGIN;
+        const playerRight = player.x + PLAYER_SIZE / 2 - COLLISION_MARGIN;
+        const playerTop = player.y - PLAYER_SIZE / 2 + COLLISION_MARGIN;
+        const playerBottom = player.y + PLAYER_SIZE / 2 - COLLISION_MARGIN;
+        
+        const pipeLeft = pipe.x;
+        const pipeRight = pipe.x + PIPE_WIDTH;
+        const pipeTopEnd = pipe.topHeight;
+        const pipeBottomStart = CANVAS_HEIGHT - pipe.bottomHeight;
+        
+        // Prüfe ob Spieler horizontal innerhalb der Röhre ist
+        const horizontalCollision = playerRight > pipeLeft && playerLeft < pipeRight;
+        
+        if (horizontalCollision) {
+          // Prüfe ob Spieler mit oberer oder unterer Röhre kollidiert
+          const hitTopPipe = playerBottom > 0 && playerTop < pipeTopEnd;
+          const hitBottomPipe = playerTop < CANVAS_HEIGHT && playerBottom > pipeBottomStart;
+          
+          if (hitTopPipe || hitBottomPipe) {
+            // Game over - nur wenn tatsächlich Kollision mit Röhre
             setStatistics(prev => ({
               ...prev,
               gamesPlayed: prev.gamesPlayed + 1,
