@@ -746,6 +746,9 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
   const cameraRef = useRef({ x: 0, y: 0 });
   const particlesRef = useRef<Array<{ x: number; y: number; vx: number; vy: number; life: number; color: string }>>([]);
   const driftMarksRef = useRef<Array<{ x: number; y: number; angle: number; life: number; width: number }>>([]);
+  const npcCarsRef = useRef<Array<{ x: number; y: number; angle: number; speed: number; color: string; lane: number; direction: 'horizontal' | 'vertical' }>>([]);
+  const trafficLightsRef = useRef<Array<{ x: number; y: number; direction: 'horizontal' | 'vertical'; state: 'red' | 'yellow' | 'green'; timer: number }>>([]);
+  const trafficSignsRef = useRef<Array<{ x: number; y: number; type: 'stop' | 'yield' | 'speed' }>>([]);
   const [boostActive, setBoostActive] = useState(false);
   const [boostTimeLeft, setBoostTimeLeft] = useState(0);
   
@@ -753,8 +756,8 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
   const GAME_CONSTANTS = {
     WORLD_WIDTH: 2400,
     WORLD_HEIGHT: 2400,
-    CANVAS_WIDTH: 600, // Smaller canvas = more zoom
-    CANVAS_HEIGHT: 450, // Smaller canvas = more zoom
+    CANVAS_WIDTH: 1000, // Larger canvas
+    CANVAS_HEIGHT: 700, // Larger canvas
     PLAYER_MAX_SPEED: 8,
     PLAYER_BOOST_MAX_SPEED: 16, // Much faster boost
     PLAYER_ACCELERATION: 0.3,
@@ -768,6 +771,8 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     CAMERA_SMOOTHING: 0.1,
     DRIFT_THRESHOLD: 0.15, // Speed difference for drift detection
     ROAD_WIDTH: 250, // Bigger streets
+    NPC_CAR_COUNT: 15, // Number of NPC cars
+    EXPLOSION_SPEED_THRESHOLD: 5, // Speed needed to explode NPC cars
   };
 
   useEffect(() => {
@@ -800,12 +805,10 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
     particlesRef.current = [];
     driftMarksRef.current = [];
 
-    // Initialize buildings (city blocks) - organized city layout with streets
-    // Buildings are placed at the edges of streets as obstacles
+    // Initialize buildings (city blocks) - buildings in blocks between streets, NOT on streets
     buildingsRef.current = [];
     const blockSize = 200;
     const streetWidth = GAME_CONSTANTS.ROAD_WIDTH;
-    const buildingDepth = 50; // How far buildings extend from street edge
     
     // Color palette for buildings
     const buildingColors = [
@@ -821,61 +824,118 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       '#2E8B57', // Sea Green
     ];
     
-    // Create organized city grid with streets - buildings at edges
-    for (let blockX = 0; blockX < GAME_CONSTANTS.WORLD_WIDTH; blockX += blockSize + streetWidth) {
-      for (let blockY = 0; blockY < GAME_CONSTANTS.WORLD_HEIGHT; blockY += blockSize + streetWidth) {
-        // Place buildings along the edges of streets
-        // Buildings on the left side of vertical streets (facing the street)
-        if (Math.random() > 0.15 && blockX > 0) {
-          const buildingHeight = 80 + Math.random() * 150; // 3D height
-          buildingsRef.current.push({
-            x: blockX - buildingDepth, // Left of the street
-            y: blockY + streetWidth / 2 + Math.random() * 20,
-            width: buildingDepth,
-            height: 60 + Math.random() * 80,
-            buildingHeight: buildingHeight,
-            color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
-          });
-        }
-        // Buildings on the right side of vertical streets
-        if (Math.random() > 0.15 && blockX + blockSize + streetWidth < GAME_CONSTANTS.WORLD_WIDTH) {
-          const buildingHeight = 80 + Math.random() * 150;
-          buildingsRef.current.push({
-            x: blockX + blockSize + streetWidth, // Right of the street
-            y: blockY + streetWidth / 2 + Math.random() * 20,
-            width: buildingDepth,
-            height: 60 + Math.random() * 80,
-            buildingHeight: buildingHeight,
-            color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
-          });
-        }
-        // Buildings on the top side of horizontal streets
-        if (Math.random() > 0.15 && blockY > 0) {
-          const buildingHeight = 80 + Math.random() * 150;
-          buildingsRef.current.push({
-            x: blockX + streetWidth / 2 + Math.random() * 20,
-            y: blockY - buildingDepth, // Top of the street
-            width: 60 + Math.random() * 80,
-            height: buildingDepth,
-            buildingHeight: buildingHeight,
-            color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
-          });
-        }
-        // Buildings on the bottom side of horizontal streets
-        if (Math.random() > 0.15 && blockY + blockSize + streetWidth < GAME_CONSTANTS.WORLD_HEIGHT) {
-          const buildingHeight = 80 + Math.random() * 150;
-          buildingsRef.current.push({
-            x: blockX + streetWidth / 2 + Math.random() * 20,
-            y: blockY + blockSize + streetWidth, // Bottom of the street
-            width: 60 + Math.random() * 80,
-            height: buildingDepth,
-            buildingHeight: buildingHeight,
-            color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
-          });
+    // Create buildings in the blocks BETWEEN streets (not on streets)
+    for (let blockX = streetWidth; blockX < GAME_CONSTANTS.WORLD_WIDTH; blockX += blockSize + streetWidth) {
+      for (let blockY = streetWidth; blockY < GAME_CONSTANTS.WORLD_HEIGHT; blockY += blockSize + streetWidth) {
+        // Place buildings inside the block (not on the street)
+        // Leave some margin from street edges
+        const margin = 20;
+        const blockStartX = blockX;
+        const blockStartY = blockY;
+        const blockEndX = blockX + blockSize;
+        const blockEndY = blockY + blockSize;
+        
+        // Place 2-4 buildings per block
+        const numBuildings = 2 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < numBuildings; i++) {
+          const buildingWidth = 40 + Math.random() * 60;
+          const buildingHeight = 40 + Math.random() * 60;
+          const buildingX = blockStartX + margin + Math.random() * (blockSize - buildingWidth - margin * 2);
+          const buildingY = blockStartY + margin + Math.random() * (blockSize - buildingHeight - margin * 2);
+          
+          // Check if building overlaps with others
+          let canPlace = true;
+          for (const existing of buildingsRef.current) {
+            if (buildingX < existing.x + existing.width + 5 &&
+                buildingX + buildingWidth + 5 > existing.x &&
+                buildingY < existing.y + existing.height + 5 &&
+                buildingY + buildingHeight + 5 > existing.y) {
+              canPlace = false;
+              break;
+            }
+          }
+          
+          if (canPlace) {
+            buildingsRef.current.push({
+              x: buildingX,
+              y: buildingY,
+              width: buildingWidth,
+              height: buildingHeight,
+              buildingHeight: 80 + Math.random() * 150,
+              color: buildingColors[Math.floor(Math.random() * buildingColors.length)],
+            });
+          }
         }
       }
     }
 
+    // Initialize traffic lights at intersections
+    trafficLightsRef.current = [];
+    for (let blockX = 0; blockX < GAME_CONSTANTS.WORLD_WIDTH; blockX += blockSize + streetWidth) {
+      for (let blockY = 0; blockY < GAME_CONSTANTS.WORLD_HEIGHT; blockY += blockSize + streetWidth) {
+        // Place traffic lights at intersections (where streets cross)
+        const intersectionX = blockX + blockSize + streetWidth / 2;
+        const intersectionY = blockY + blockSize + streetWidth / 2;
+        
+        if (intersectionX < GAME_CONSTANTS.WORLD_WIDTH && intersectionY < GAME_CONSTANTS.WORLD_HEIGHT) {
+          // Horizontal traffic light
+          trafficLightsRef.current.push({
+            x: intersectionX,
+            y: intersectionY - streetWidth / 2 - 10,
+            direction: 'horizontal',
+            state: Math.random() > 0.5 ? 'green' : 'red',
+            timer: Math.random() * 5000,
+          });
+          
+          // Vertical traffic light
+          trafficLightsRef.current.push({
+            x: intersectionX - streetWidth / 2 - 10,
+            y: intersectionY,
+            direction: 'vertical',
+            state: Math.random() > 0.5 ? 'green' : 'red',
+            timer: Math.random() * 5000,
+          });
+        }
+      }
+    }
+    
+    // Initialize traffic signs
+    trafficSignsRef.current = [];
+    for (let blockX = 0; blockX < GAME_CONSTANTS.WORLD_WIDTH; blockX += blockSize + streetWidth) {
+      for (let blockY = 0; blockY < GAME_CONSTANTS.WORLD_HEIGHT; blockY += blockSize + streetWidth) {
+        if (Math.random() > 0.7) {
+          const signX = blockX + blockSize + streetWidth / 2;
+          const signY = blockY + blockSize + streetWidth / 2;
+          const signTypes: Array<'stop' | 'yield' | 'speed'> = ['stop', 'yield', 'speed'];
+          trafficSignsRef.current.push({
+            x: signX + (Math.random() - 0.5) * streetWidth * 0.6,
+            y: signY + (Math.random() - 0.5) * streetWidth * 0.6,
+            type: signTypes[Math.floor(Math.random() * signTypes.length)],
+          });
+        }
+      }
+    }
+    
+    // Initialize NPC cars
+    npcCarsRef.current = [];
+    const npcCarColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
+    for (let i = 0; i < GAME_CONSTANTS.NPC_CAR_COUNT; i++) {
+      // Place NPC cars on streets
+      const streetX = Math.floor(Math.random() * (GAME_CONSTANTS.WORLD_WIDTH / (blockSize + streetWidth))) * (blockSize + streetWidth) + blockSize + streetWidth / 2;
+      const streetY = Math.floor(Math.random() * (GAME_CONSTANTS.WORLD_HEIGHT / (blockSize + streetWidth))) * (blockSize + streetWidth) + blockSize + streetWidth / 2;
+      
+      const isHorizontal = Math.random() > 0.5;
+      npcCarsRef.current.push({
+        x: streetX,
+        y: streetY,
+        angle: isHorizontal ? 0 : Math.PI / 2,
+        speed: 2 + Math.random() * 2,
+        color: npcCarColors[Math.floor(Math.random() * npcCarColors.length)],
+        lane: Math.random() > 0.5 ? 1 : -1,
+        direction: isHorizontal ? 'horizontal' : 'vertical',
+      });
+    }
+    
     // Initialize police cars with smarter AI
     policeRef.current = [];
     for (let i = 0; i < policeCount; i++) {
@@ -982,6 +1042,66 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         p.y += p.vy;
         p.life -= 1;
         return p.life > 0;
+      });
+
+      // Update traffic lights
+      trafficLightsRef.current.forEach(light => {
+        light.timer += deltaTime;
+        if (light.timer > 5000) { // Change every 5 seconds
+          if (light.state === 'green') {
+            light.state = 'yellow';
+            light.timer = 0;
+          } else if (light.state === 'yellow') {
+            light.state = 'red';
+            light.timer = 0;
+          } else {
+            light.state = 'green';
+            light.timer = 0;
+          }
+        }
+      });
+
+      // Update NPC cars - they drive on streets
+      npcCarsRef.current.forEach(npcCar => {
+        const blockSize = 200;
+        const streetWidth = GAME_CONSTANTS.ROAD_WIDTH;
+        
+        // Move NPC car along its direction
+        if (npcCar.direction === 'horizontal') {
+          npcCar.x += Math.cos(npcCar.angle) * npcCar.speed;
+          // Keep on street (horizontal)
+          const streetY = Math.floor(npcCar.y / (blockSize + streetWidth)) * (blockSize + streetWidth) + blockSize + streetWidth / 2;
+          npcCar.y = streetY + npcCar.lane * 30; // Offset for lane
+          
+          // Wrap around or reverse at world edges
+          if (npcCar.x < 0) {
+            npcCar.x = GAME_CONSTANTS.WORLD_WIDTH;
+          } else if (npcCar.x > GAME_CONSTANTS.WORLD_WIDTH) {
+            npcCar.x = 0;
+          }
+        } else {
+          npcCar.y += Math.sin(npcCar.angle) * npcCar.speed;
+          // Keep on street (vertical)
+          const streetX = Math.floor(npcCar.x / (blockSize + streetWidth)) * (blockSize + streetWidth) + blockSize + streetWidth / 2;
+          npcCar.x = streetX + npcCar.lane * 30; // Offset for lane
+          
+          // Wrap around or reverse at world edges
+          if (npcCar.y < 0) {
+            npcCar.y = GAME_CONSTANTS.WORLD_HEIGHT;
+          } else if (npcCar.y > GAME_CONSTANTS.WORLD_HEIGHT) {
+            npcCar.y = 0;
+          }
+        }
+        
+        // Check traffic lights - slow down or stop at red
+        trafficLightsRef.current.forEach(light => {
+          const dist = Math.sqrt(Math.pow(npcCar.x - light.x, 2) + Math.pow(npcCar.y - light.y, 2));
+          if (dist < 100 && light.state === 'red' && light.direction === npcCar.direction) {
+            npcCar.speed = Math.max(0, npcCar.speed - 0.1);
+          } else {
+            npcCar.speed = Math.min(4, npcCar.speed + 0.05);
+          }
+        });
       });
 
       // Spawn more police cars over time
@@ -1115,6 +1235,45 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
       // Remove old collected boosts
       boostsRef.current = boostsRef.current.filter(b => !b.collected || Date.now() - b.id < 1000);
 
+      // Check collision with NPC cars - explode if hit with high speed
+      npcCarsRef.current.forEach((npcCar, index) => {
+        const dx = player.x - npcCar.x;
+        const dy = player.y - npcCar.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < GAME_CONSTANTS.COLLISION_DISTANCE) {
+          // Check if player speed is high enough to explode NPC car
+          if (Math.abs(player.speed) > GAME_CONSTANTS.EXPLOSION_SPEED_THRESHOLD) {
+            // Create explosion effect
+            for (let i = 0; i < 30; i++) {
+              particlesRef.current.push({
+                x: npcCar.x,
+                y: npcCar.y,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                life: 50 + Math.random() * 30,
+                color: Math.random() > 0.5 ? '#ff0000' : '#ff6600'
+              });
+            }
+            
+            // Remove NPC car
+            npcCarsRef.current.splice(index, 1);
+            
+            // Slow down player slightly
+            player.speed *= 0.8;
+          } else {
+            // Low speed collision - just push away
+            if (distance > 0) {
+              const pushX = (dx / distance) * 5;
+              const pushY = (dy / distance) * 5;
+              player.x += pushX;
+              player.y += pushY;
+              player.speed *= 0.9;
+            }
+          }
+        }
+      });
+
       // Check collision with buildings (obstacles)
       const playerRadius = 18; // Approximate car radius
       buildingsRef.current.forEach(building => {
@@ -1237,26 +1396,40 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         // Apply friction
         police.speed *= 0.98;
         
-        // Move police car
-        police.x += Math.cos(police.angle) * police.speed;
-        police.y += Math.sin(police.angle) * police.speed;
+        // Check collision with buildings BEFORE moving - police cannot drive through buildings
+        const policeRadius = 18;
+        let newX = police.x + Math.cos(police.angle) * police.speed;
+        let newY = police.y + Math.sin(police.angle) * police.speed;
+        let canMove = true;
         
-        // Avoid buildings (simple collision avoidance)
         buildingsRef.current.forEach(building => {
-          const buildingCenterX = building.x + building.width / 2;
-          const buildingCenterY = building.y + building.height / 2;
-          const distToBuilding = Math.sqrt(
-            Math.pow(police.x - buildingCenterX, 2) + 
-            Math.pow(police.y - buildingCenterY, 2)
-          );
+          // Check if new position would collide with building
+          const closestX = Math.max(building.x, Math.min(newX, building.x + building.width));
+          const closestY = Math.max(building.y, Math.min(newY, building.y + building.height));
           
-          if (distToBuilding < 80) {
+          const dx = newX - closestX;
+          const dy = newY - closestY;
+          const distanceSq = dx * dx + dy * dy;
+          
+          if (distanceSq < policeRadius * policeRadius) {
+            canMove = false;
             // Steer away from building
-            const avoidAngle = Math.atan2(police.y - buildingCenterY, police.x - buildingCenterX);
-            const avoidWeight = (80 - distToBuilding) / 80;
-            police.angle += (avoidAngle - police.angle) * avoidWeight * 0.1;
+            const avoidAngle = Math.atan2(police.y - (building.y + building.height / 2), police.x - (building.x + building.width / 2));
+            const angleDiff = avoidAngle - police.angle;
+            // Normalize angle difference
+            let normalizedDiff = angleDiff;
+            while (normalizedDiff > Math.PI) normalizedDiff -= 2 * Math.PI;
+            while (normalizedDiff < -Math.PI) normalizedDiff += 2 * Math.PI;
+            police.angle += normalizedDiff * 0.2; // Turn away from building
+            police.speed *= 0.8; // Slow down
           }
         });
+        
+        // Only move if no collision
+        if (canMove) {
+          police.x = newX;
+          police.y = newY;
+        }
         
         // Coordinate with other police cars (flanking behavior)
         policeRef.current.forEach((otherPolice, otherIndex) => {
@@ -1501,6 +1674,148 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         }
       });
 
+      // Draw traffic lights
+      trafficLightsRef.current.forEach(light => {
+        if (light.x >= cameraRef.current.x - 50 &&
+            light.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50 &&
+            light.y >= cameraRef.current.y - 50 &&
+            light.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
+          
+          ctx.save();
+          ctx.translate(light.x, light.y);
+          
+          // Draw pole
+          ctx.fillStyle = '#333';
+          ctx.fillRect(-3, 0, 6, 20);
+          
+          // Draw traffic light box
+          ctx.fillStyle = '#222';
+          ctx.fillRect(-8, -15, 16, 30);
+          ctx.strokeStyle = '#444';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-8, -15, 16, 30);
+          
+          // Draw lights
+          const colors = ['red', 'yellow', 'green'];
+          const states = ['red', 'yellow', 'green'];
+          states.forEach((state, i) => {
+            const yPos = -10 + i * 10;
+            ctx.fillStyle = light.state === state ? 
+              (state === 'red' ? '#ff0000' : state === 'yellow' ? '#ffff00' : '#00ff00') : 
+              '#333';
+            ctx.beginPath();
+            ctx.arc(0, yPos, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Glow effect for active light
+            if (light.state === state) {
+              ctx.shadowBlur = 10;
+              ctx.shadowColor = ctx.fillStyle as string;
+              ctx.beginPath();
+              ctx.arc(0, yPos, 4, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.shadowBlur = 0;
+            }
+          });
+          
+          ctx.restore();
+        }
+      });
+
+      // Draw traffic signs
+      trafficSignsRef.current.forEach(sign => {
+        if (sign.x >= cameraRef.current.x - 50 &&
+            sign.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50 &&
+            sign.y >= cameraRef.current.y - 50 &&
+            sign.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
+          
+          ctx.save();
+          ctx.translate(sign.x, sign.y);
+          
+          // Draw pole
+          ctx.fillStyle = '#666';
+          ctx.fillRect(-2, 0, 4, 15);
+          
+          // Draw sign
+          ctx.fillStyle = sign.type === 'stop' ? '#ff0000' : sign.type === 'yield' ? '#ffff00' : '#00ff00';
+          ctx.fillRect(-10, -12, 20, 15);
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-10, -12, 20, 15);
+          
+          // Draw sign symbol
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          if (sign.type === 'stop') {
+            ctx.fillText('STOP', 0, -4);
+          } else if (sign.type === 'yield') {
+            ctx.fillText('YIELD', 0, -4);
+          } else {
+            ctx.fillText('50', 0, -4);
+          }
+          
+          ctx.restore();
+        }
+      });
+
+      // Helper function to draw rounded rectangle
+      const drawRoundedRect = (x: number, y: number, width: number, height: number, radius: number) => {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+      };
+
+      // Draw NPC cars
+      npcCarsRef.current.forEach(npcCar => {
+        if (npcCar.x >= cameraRef.current.x - 50 &&
+            npcCar.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50 &&
+            npcCar.y >= cameraRef.current.y - 50 &&
+            npcCar.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
+          
+          ctx.save();
+          ctx.translate(npcCar.x, npcCar.y);
+          ctx.rotate(npcCar.angle);
+          
+          // Shadow
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.fillRect(-14, 10, 28, 8);
+          
+          // Car body
+          ctx.fillStyle = npcCar.color;
+          drawRoundedRect(-18, -10, 36, 20, 4);
+          ctx.fill();
+          
+          // Windows
+          const windowGradient = ctx.createLinearGradient(-12, -6, -12, 2);
+          windowGradient.addColorStop(0, '#87CEEB');
+          windowGradient.addColorStop(1, '#4682B4');
+          ctx.fillStyle = windowGradient;
+          ctx.fillRect(-12, -6, 24, 8);
+          ctx.strokeStyle = '#2c3e50';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(-12, -6, 24, 8);
+          
+          // Wheels
+          ctx.fillStyle = '#1a1a1a';
+          ctx.fillRect(-13, -10, 6, 4);
+          ctx.fillRect(7, -10, 6, 4);
+          ctx.fillRect(-13, 6, 6, 4);
+          ctx.fillRect(7, 6, 6, 4);
+          
+          ctx.restore();
+        }
+      });
+
       // Draw boost items (only those in view)
       boostsRef.current.forEach(boost => {
         if (!boost.collected) {
@@ -1548,21 +1863,6 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
           }
         }
       });
-
-      // Helper function to draw rounded rectangle
-      const drawRoundedRect = (x: number, y: number, width: number, height: number, radius: number) => {
-        ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + width - radius, y);
-        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-        ctx.lineTo(x + width, y + height - radius);
-        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        ctx.lineTo(x + radius, y + height);
-        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
-        ctx.closePath();
-      };
 
       // Draw police cars - enhanced (only those in view)
       policeRef.current.forEach(police => {
