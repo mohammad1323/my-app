@@ -322,19 +322,27 @@ export default function Home() {
         const horizontalCollision = playerRight > pipeLeft && playerLeft < pipeRight;
         
         if (horizontalCollision) {
-          // Prüfe ob Spieler mit oberer oder unterer Röhre kollidiert
-          const hitTopPipe = playerBottom > 0 && playerTop < pipeTopEnd;
-          const hitBottomPipe = playerTop < CANVAS_HEIGHT && playerBottom > pipeBottomStart;
+          // Prüfe ob Spieler in der sicheren Lücke ist
+          const inSafeGap = playerTop >= pipeTopEnd && playerBottom <= pipeBottomStart;
           
-          if (hitTopPipe || hitBottomPipe) {
-            // Game over - nur wenn tatsächlich Kollision mit Röhre
-            setStatistics(prev => ({
-              ...prev,
-              gamesPlayed: prev.gamesPlayed + 1,
-              bestScore: Math.max(prev.bestScore, score + 1),
-            }));
-            setGameState('gameOver');
-            return;
+          // Wenn Spieler NICHT in der Lücke ist, dann kollidiert er mit einer Röhre
+          if (!inSafeGap) {
+            // Prüfe ob Spieler mit oberer Röhre kollidiert
+            const hitTopPipe = playerBottom > 0 && playerTop < pipeTopEnd;
+            
+            // Prüfe ob Spieler mit unterer Röhre kollidiert
+            const hitBottomPipe = playerTop < CANVAS_HEIGHT && playerBottom > pipeBottomStart;
+            
+            // Nur Game Over wenn Spieler wirklich eine Röhre berührt
+            if (hitTopPipe || hitBottomPipe) {
+              setStatistics(prev => ({
+                ...prev,
+                gamesPlayed: prev.gamesPlayed + 1,
+                bestScore: Math.max(prev.bestScore, score + 1),
+              }));
+              setGameState('gameOver');
+              return;
+            }
           }
         }
         
@@ -399,8 +407,11 @@ export default function Home() {
         return particle.life > 0;
       });
       
-      // Check boundaries
-      if (player.y - PLAYER_SIZE / 2 < 0 || player.y + PLAYER_SIZE / 2 > CANVAS_HEIGHT) {
+      // Check boundaries - nur wenn Spieler wirklich außerhalb des Bildschirms ist
+      const playerTopBoundary = player.y - PLAYER_SIZE / 2;
+      const playerBottomBoundary = player.y + PLAYER_SIZE / 2;
+      
+      if (playerTopBoundary < -5 || playerBottomBoundary > CANVAS_HEIGHT + 5) {
         setStatistics(prev => ({
           ...prev,
           gamesPlayed: prev.gamesPlayed + 1,
