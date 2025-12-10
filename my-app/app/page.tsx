@@ -1637,182 +1637,479 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         return "#" + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
       }
 
-      // Draw buildings in 2D (only those in view)
+      // 3D Projection function (isometric view from above/side)
+      const project3D = (x: number, y: number, z: number) => {
+        // Isometric projection: 30 degree angle, looking from above
+        const isoAngle = Math.PI / 6; // 30 degrees
+        const scale = 0.5; // Scale factor for depth
+        const isoX = x + (y * Math.cos(isoAngle)) * scale;
+        const isoY = y * Math.sin(isoAngle) * scale - z * 0.8;
+        return { x: isoX, y: isoY };
+      };
+
+      // Draw buildings in 3D (only those in view)
       buildingsRef.current.forEach(building => {
         // Only draw if building is in camera view (with margin) - optimized check
-        if (building.x + building.width >= cameraRef.current.x - 100 &&
-            building.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 100 &&
-            building.y + building.height >= cameraRef.current.y - 100 &&
-            building.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 100) {
+        if (building.x + building.width >= cameraRef.current.x - 200 &&
+            building.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 200 &&
+            building.y + building.height >= cameraRef.current.y - 200 &&
+            building.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 200) {
           
           const b = building;
+          const height = b.buildingHeight;
           
-          // Draw building base with color
+          // Project 3D points to 2D
+          const p1 = project3D(b.x, b.y, 0);
+          const p2 = project3D(b.x + b.width, b.y, 0);
+          const p3 = project3D(b.x + b.width, b.y + b.height, 0);
+          const p4 = project3D(b.x, b.y + b.height, 0);
+          const p5 = project3D(b.x, b.y, height);
+          const p6 = project3D(b.x + b.width, b.y, height);
+          const p7 = project3D(b.x + b.width, b.y + b.height, height);
+          const p8 = project3D(b.x, b.y + b.height, height);
+          
+          // Draw building faces (back to front for proper depth)
+          // Right face (side)
+          ctx.fillStyle = adjustBrightness(b.color, -25);
+          ctx.beginPath();
+          ctx.moveTo(p2.x, p2.y);
+          ctx.lineTo(p3.x, p3.y);
+          ctx.lineTo(p7.x, p7.y);
+          ctx.lineTo(p6.x, p6.y);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Left face (side)
+          ctx.fillStyle = adjustBrightness(b.color, -30);
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p4.x, p4.y);
+          ctx.lineTo(p8.x, p8.y);
+          ctx.lineTo(p5.x, p5.y);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Top face (roof)
+          const roofGradient = ctx.createLinearGradient(p5.x, p5.y, p7.x, p7.y);
+          roofGradient.addColorStop(0, b.color);
+          roofGradient.addColorStop(1, adjustBrightness(b.color, 20));
+          ctx.fillStyle = roofGradient;
+          ctx.beginPath();
+          ctx.moveTo(p5.x, p5.y);
+          ctx.lineTo(p6.x, p6.y);
+          ctx.lineTo(p7.x, p7.y);
+          ctx.lineTo(p8.x, p8.y);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Front face (main)
           ctx.fillStyle = b.color;
-          ctx.fillRect(b.x, b.y, b.width, b.height);
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.lineTo(p6.x, p6.y);
+          ctx.lineTo(p5.x, p5.y);
+          ctx.closePath();
+          ctx.fill();
           
-          // Draw building outline
-          ctx.strokeStyle = adjustBrightness(b.color, -30);
-          ctx.lineWidth = 2;
-          ctx.strokeRect(b.x, b.y, b.width, b.height);
+          // Back face
+          ctx.fillStyle = adjustBrightness(b.color, -15);
+          ctx.beginPath();
+          ctx.moveTo(p3.x, p3.y);
+          ctx.lineTo(p4.x, p4.y);
+          ctx.lineTo(p8.x, p8.y);
+          ctx.lineTo(p7.x, p7.y);
+          ctx.closePath();
+          ctx.fill();
           
-          // Add windows to buildings
-          const windowSpacing = 15;
-          const windowSize = 8;
-          const windowColor = ((b.x * 7 + b.y * 11) % 100) / 100 > 0.5 ? '#FFD700' : '#87CEEB'; // Gold or Sky Blue
+          // Add windows to front face
+          const windowSpacing = 12;
+          const windowSize = 6;
+          const windowColor = ((b.x * 7 + b.y * 11) % 100) / 100 > 0.5 ? '#FFD700' : '#87CEEB';
           ctx.fillStyle = windowColor;
           
-          for (let wx = b.x + 10; wx < b.x + b.width - 10; wx += windowSpacing) {
-            for (let wy = b.y + 10; wy < b.y + b.height - 10; wy += windowSpacing) {
-              // Use deterministic pattern instead of random for better performance
-              const windowHash = ((wx * 7 + wy * 11) % 100) / 100;
-              if (windowHash > 0.3) {
-                ctx.fillRect(wx, wy, windowSize, 10);
+          for (let wx = 5; wx < b.width - 5; wx += windowSpacing) {
+            for (let wy = 5; wy < height - 5; wy += windowSpacing) {
+              const windowHash = ((b.x * 7 + b.y * 11 + wx * 13 + wy * 17) % 100) / 100;
+              if (windowHash > 0.25) {
+                const winX = b.x + wx;
+                const winY = b.y;
+                const winZ = wy;
+                const winP1 = project3D(winX, winY, winZ);
+                const winP2 = project3D(winX + windowSize, winY, winZ);
+                const winP3 = project3D(winX + windowSize, winY, winZ + windowSize);
+                const winP4 = project3D(winX, winY, winZ + windowSize);
+                
+                ctx.beginPath();
+                ctx.moveTo(winP1.x, winP1.y);
+                ctx.lineTo(winP2.x, winP2.y);
+                ctx.lineTo(winP3.x, winP3.y);
+                ctx.lineTo(winP4.x, winP4.y);
+                ctx.closePath();
+                ctx.fill();
               }
             }
           }
+          
+          // Draw building outline
+          ctx.strokeStyle = adjustBrightness(b.color, -40);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          // Base
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.lineTo(p3.x, p3.y);
+          ctx.lineTo(p4.x, p4.y);
+          ctx.closePath();
+          // Top
+          ctx.moveTo(p5.x, p5.y);
+          ctx.lineTo(p6.x, p6.y);
+          ctx.lineTo(p7.x, p7.y);
+          ctx.lineTo(p8.x, p8.y);
+          ctx.closePath();
+          // Vertical edges
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p5.x, p5.y);
+          ctx.moveTo(p2.x, p2.y);
+          ctx.lineTo(p6.x, p6.y);
+          ctx.moveTo(p3.x, p3.y);
+          ctx.lineTo(p7.x, p7.y);
+          ctx.moveTo(p4.x, p4.y);
+          ctx.lineTo(p8.x, p8.y);
+          ctx.stroke();
         }
       });
 
-      // Draw traffic lights
+      // Draw traffic lights in 3D
       trafficLightsRef.current.forEach(light => {
         if (light.x >= cameraRef.current.x - 50 &&
             light.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50 &&
             light.y >= cameraRef.current.y - 50 &&
             light.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
           
-          ctx.save();
-          ctx.translate(light.x, light.y);
+          const poleHeight = 25;
+          const boxWidth = 16;
+          const boxHeight = 30;
+          const boxDepth = 8;
+          
+          // Project pole
+          const poleBase = project3D(light.x, light.y, 0);
+          const poleTop = project3D(light.x, light.y, poleHeight);
           
           // Draw pole
           ctx.fillStyle = '#333';
-          ctx.fillRect(-3, 0, 6, 20);
+          ctx.beginPath();
+          ctx.moveTo(poleBase.x - 2, poleBase.y);
+          ctx.lineTo(poleBase.x + 2, poleBase.y);
+          ctx.lineTo(poleTop.x + 2, poleTop.y);
+          ctx.lineTo(poleTop.x - 2, poleTop.y);
+          ctx.closePath();
+          ctx.fill();
           
-          // Draw traffic light box
+          // Project traffic light box
+          const boxOffset = light.direction === 'horizontal' ? { x: 0, y: -boxWidth/2 } : { x: -boxWidth/2, y: 0 };
+          const boxP1 = project3D(light.x + boxOffset.x, light.y + boxOffset.y, poleHeight);
+          const boxP2 = project3D(light.x + boxOffset.x + boxWidth, light.y + boxOffset.y, poleHeight);
+          const boxP3 = project3D(light.x + boxOffset.x + boxWidth, light.y + boxOffset.y + boxDepth, poleHeight);
+          const boxP4 = project3D(light.x + boxOffset.x, light.y + boxOffset.y + boxDepth, poleHeight);
+          const boxTopP1 = project3D(light.x + boxOffset.x, light.y + boxOffset.y, poleHeight + boxHeight);
+          const boxTopP2 = project3D(light.x + boxOffset.x + boxWidth, light.y + boxOffset.y, poleHeight + boxHeight);
+          const boxTopP3 = project3D(light.x + boxOffset.x + boxWidth, light.y + boxOffset.y + boxDepth, poleHeight + boxHeight);
+          const boxTopP4 = project3D(light.x + boxOffset.x, light.y + boxOffset.y + boxDepth, poleHeight + boxHeight);
+          
+          // Draw box faces
           ctx.fillStyle = '#222';
-          ctx.fillRect(-8, -15, 16, 30);
-          ctx.strokeStyle = '#444';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(-8, -15, 16, 30);
+          // Front face
+          ctx.beginPath();
+          ctx.moveTo(boxP1.x, boxP1.y);
+          ctx.lineTo(boxP2.x, boxP2.y);
+          ctx.lineTo(boxTopP2.x, boxTopP2.y);
+          ctx.lineTo(boxTopP1.x, boxTopP1.y);
+          ctx.closePath();
+          ctx.fill();
           
-          // Draw lights
-          const colors = ['red', 'yellow', 'green'];
+          // Top face
+          ctx.fillStyle = '#111';
+          ctx.beginPath();
+          ctx.moveTo(boxTopP1.x, boxTopP1.y);
+          ctx.lineTo(boxTopP2.x, boxTopP2.y);
+          ctx.lineTo(boxTopP3.x, boxTopP3.y);
+          ctx.lineTo(boxTopP4.x, boxTopP4.y);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Draw lights on front face
           const states = ['red', 'yellow', 'green'];
           states.forEach((state, i) => {
-            const yPos = -10 + i * 10;
-            ctx.fillStyle = light.state === state ? 
+            const lightY = poleHeight + 5 + i * 10;
+            const lightProj = project3D(light.x + boxOffset.x + boxWidth/2, light.y + boxOffset.y, lightY);
+            const lightColor = light.state === state ? 
               (state === 'red' ? '#ff0000' : state === 'yellow' ? '#ffff00' : '#00ff00') : 
               '#333';
+            
+            ctx.fillStyle = lightColor;
             ctx.beginPath();
-            ctx.arc(0, yPos, 4, 0, Math.PI * 2);
+            ctx.arc(lightProj.x, lightProj.y, 4, 0, Math.PI * 2);
             ctx.fill();
             
             // Glow effect for active light
             if (light.state === state) {
               ctx.shadowBlur = 10;
-              ctx.shadowColor = ctx.fillStyle as string;
+              ctx.shadowColor = lightColor;
               ctx.beginPath();
-              ctx.arc(0, yPos, 4, 0, Math.PI * 2);
+              ctx.arc(lightProj.x, lightProj.y, 4, 0, Math.PI * 2);
               ctx.fill();
               ctx.shadowBlur = 0;
             }
           });
-          
-          ctx.restore();
         }
       });
 
-      // Draw traffic signs
+      // Draw traffic signs in 3D
       trafficSignsRef.current.forEach(sign => {
         if (sign.x >= cameraRef.current.x - 50 &&
             sign.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50 &&
             sign.y >= cameraRef.current.y - 50 &&
             sign.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
           
-          ctx.save();
-          ctx.translate(sign.x, sign.y);
+          const poleHeight = 20;
+          const signWidth = 20;
+          const signHeight = 15;
+          const signDepth = 2;
+          
+          // Project pole
+          const poleBase = project3D(sign.x, sign.y, 0);
+          const poleTop = project3D(sign.x, sign.y, poleHeight);
           
           // Draw pole
           ctx.fillStyle = '#666';
-          ctx.fillRect(-2, 0, 4, 15);
+          ctx.beginPath();
+          ctx.moveTo(poleBase.x - 2, poleBase.y);
+          ctx.lineTo(poleBase.x + 2, poleBase.y);
+          ctx.lineTo(poleTop.x + 2, poleTop.y);
+          ctx.lineTo(poleTop.x - 2, poleTop.y);
+          ctx.closePath();
+          ctx.fill();
           
-          // Draw sign
-          ctx.fillStyle = sign.type === 'stop' ? '#ff0000' : sign.type === 'yield' ? '#ffff00' : '#00ff00';
-          ctx.fillRect(-10, -12, 20, 15);
-          ctx.strokeStyle = '#000';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(-10, -12, 20, 15);
+          // Project sign
+          const signP1 = project3D(sign.x - signWidth/2, sign.y, poleHeight);
+          const signP2 = project3D(sign.x + signWidth/2, sign.y, poleHeight);
+          const signP3 = project3D(sign.x + signWidth/2, sign.y + signDepth, poleHeight);
+          const signP4 = project3D(sign.x - signWidth/2, sign.y + signDepth, poleHeight);
+          const signTopP1 = project3D(sign.x - signWidth/2, sign.y, poleHeight + signHeight);
+          const signTopP2 = project3D(sign.x + signWidth/2, sign.y, poleHeight + signHeight);
+          const signTopP3 = project3D(sign.x + signWidth/2, sign.y + signDepth, poleHeight + signHeight);
+          const signTopP4 = project3D(sign.x - signWidth/2, sign.y + signDepth, poleHeight + signHeight);
           
-          // Draw sign symbol
+          // Draw sign faces
+          const signColor = sign.type === 'stop' ? '#ff0000' : sign.type === 'yield' ? '#ffff00' : '#00ff00';
+          ctx.fillStyle = signColor;
+          
+          // Front face
+          ctx.beginPath();
+          ctx.moveTo(signP1.x, signP1.y);
+          ctx.lineTo(signP2.x, signP2.y);
+          ctx.lineTo(signTopP2.x, signTopP2.y);
+          ctx.lineTo(signTopP1.x, signTopP1.y);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Top face
+          ctx.fillStyle = adjustBrightness(signColor, -20);
+          ctx.beginPath();
+          ctx.moveTo(signTopP1.x, signTopP1.y);
+          ctx.lineTo(signTopP2.x, signTopP2.y);
+          ctx.lineTo(signTopP3.x, signTopP3.y);
+          ctx.lineTo(signTopP4.x, signTopP4.y);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Draw sign text
           ctx.fillStyle = '#fff';
           ctx.font = 'bold 10px Arial';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
+          const textProj = project3D(sign.x, sign.y, poleHeight + signHeight/2);
           if (sign.type === 'stop') {
-            ctx.fillText('STOP', 0, -4);
+            ctx.fillText('STOP', textProj.x, textProj.y);
           } else if (sign.type === 'yield') {
-            ctx.fillText('YIELD', 0, -4);
+            ctx.fillText('YIELD', textProj.x, textProj.y);
           } else {
-            ctx.fillText('50', 0, -4);
+            ctx.fillText('50', textProj.x, textProj.y);
           }
-          
-          ctx.restore();
         }
       });
 
-      // Helper function to draw rounded rectangle
-      const drawRoundedRect = (x: number, y: number, width: number, height: number, radius: number) => {
+      // Helper function to draw 3D car
+      const draw3DCar = (x: number, y: number, angle: number, color: string, isPolice: boolean = false, isPlayer: boolean = false) => {
+        const carLength = 36;
+        const carWidth = 20;
+        const carHeight = 12;
+        
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const halfLength = carLength / 2;
+        const halfWidth = carWidth / 2;
+        
+        // Calculate car corners in world space
+        const corners = [
+          { x: x - halfLength * cos + halfWidth * sin, y: y - halfLength * sin - halfWidth * cos },
+          { x: x + halfLength * cos + halfWidth * sin, y: y + halfLength * sin - halfWidth * cos },
+          { x: x + halfLength * cos - halfWidth * sin, y: y + halfLength * sin + halfWidth * cos },
+          { x: x - halfLength * cos - halfWidth * sin, y: y - halfLength * sin + halfWidth * cos },
+        ];
+        
+        // Project to 3D
+        const projCorners = corners.map(c => project3D(c.x, c.y, 0));
+        const projTopCorners = corners.map(c => project3D(c.x, c.y, carHeight));
+        
+        // Draw shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
         ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + width - radius, y);
-        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-        ctx.lineTo(x + width, y + height - radius);
-        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        ctx.lineTo(x + radius, y + height);
-        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.ellipse(x, y, carLength * 0.6, carWidth * 0.4, angle, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw car body (top face)
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(projTopCorners[0].x, projTopCorners[0].y);
+        ctx.lineTo(projTopCorners[1].x, projTopCorners[1].y);
+        ctx.lineTo(projTopCorners[2].x, projTopCorners[2].y);
+        ctx.lineTo(projTopCorners[3].x, projTopCorners[3].y);
         ctx.closePath();
+        ctx.fill();
+        
+        // Draw side faces
+        const sideColor = adjustBrightness(color, -25);
+        ctx.fillStyle = sideColor;
+        
+        // Left side
+        ctx.beginPath();
+        ctx.moveTo(projCorners[0].x, projCorners[0].y);
+        ctx.lineTo(projCorners[3].x, projCorners[3].y);
+        ctx.lineTo(projTopCorners[3].x, projTopCorners[3].y);
+        ctx.lineTo(projTopCorners[0].x, projTopCorners[0].y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Right side
+        ctx.beginPath();
+        ctx.moveTo(projCorners[1].x, projCorners[1].y);
+        ctx.lineTo(projCorners[2].x, projCorners[2].y);
+        ctx.lineTo(projTopCorners[2].x, projTopCorners[2].y);
+        ctx.lineTo(projTopCorners[1].x, projTopCorners[1].y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw front/back faces
+        const frontColor = adjustBrightness(color, -15);
+        ctx.fillStyle = frontColor;
+        
+        // Front
+        ctx.beginPath();
+        ctx.moveTo(projCorners[0].x, projCorners[0].y);
+        ctx.lineTo(projCorners[1].x, projCorners[1].y);
+        ctx.lineTo(projTopCorners[1].x, projTopCorners[1].y);
+        ctx.lineTo(projTopCorners[0].x, projTopCorners[0].y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Back
+        ctx.beginPath();
+        ctx.moveTo(projCorners[2].x, projCorners[2].y);
+        ctx.lineTo(projCorners[3].x, projCorners[3].y);
+        ctx.lineTo(projTopCorners[3].x, projTopCorners[3].y);
+        ctx.lineTo(projTopCorners[2].x, projTopCorners[2].y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw windows
+        ctx.fillStyle = 'rgba(135, 206, 235, 0.6)';
+        const windowLength = carLength * 0.5;
+        const windowWidth = carWidth * 0.4;
+        
+        const windowCorners = [
+          { x: x - windowLength * cos * 0.3 + windowWidth * sin * 0.5, y: y - windowLength * sin * 0.3 - windowWidth * cos * 0.5 },
+          { x: x + windowLength * cos * 0.3 + windowWidth * sin * 0.5, y: y + windowLength * sin * 0.3 - windowWidth * cos * 0.5 },
+          { x: x + windowLength * cos * 0.3 - windowWidth * sin * 0.5, y: y + windowLength * sin * 0.3 + windowWidth * cos * 0.5 },
+          { x: x - windowLength * cos * 0.3 - windowWidth * sin * 0.5, y: y - windowLength * sin * 0.3 + windowWidth * cos * 0.5 },
+        ];
+        
+        const projWindowCorners = windowCorners.map(c => project3D(c.x, c.y, carHeight + 1));
+        ctx.beginPath();
+        ctx.moveTo(projWindowCorners[0].x, projWindowCorners[0].y);
+        ctx.lineTo(projWindowCorners[1].x, projWindowCorners[1].y);
+        ctx.lineTo(projWindowCorners[2].x, projWindowCorners[2].y);
+        ctx.lineTo(projWindowCorners[3].x, projWindowCorners[3].y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw wheels
+        const wheelRadius = 4;
+        const wheelPositions = [
+          { x: x - halfLength * 0.6 * cos + halfWidth * sin, y: y - halfLength * 0.6 * sin - halfWidth * cos },
+          { x: x + halfLength * 0.6 * cos + halfWidth * sin, y: y + halfLength * 0.6 * sin - halfWidth * cos },
+          { x: x - halfLength * 0.6 * cos - halfWidth * sin, y: y - halfLength * 0.6 * sin + halfWidth * cos },
+          { x: x + halfLength * 0.6 * cos - halfWidth * sin, y: y + halfLength * 0.6 * sin + halfWidth * cos },
+        ];
+        
+        wheelPositions.forEach(wheel => {
+          const wheelProj = project3D(wheel.x, wheel.y, 0);
+          ctx.fillStyle = '#1a1a1a';
+          ctx.beginPath();
+          ctx.arc(wheelProj.x, wheelProj.y, wheelRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#444';
+          ctx.beginPath();
+          ctx.arc(wheelProj.x, wheelProj.y, wheelRadius * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        
+        // Police lights
+        if (isPolice) {
+          const lightTime = Date.now() % 1000;
+          const lightColor1 = lightTime < 500 ? '#ff0000' : '#0000ff';
+          const lightColor2 = lightTime < 500 ? '#0000ff' : '#ff0000';
+          
+          const lightPos1 = { x: x - halfLength * 0.4 * cos, y: y - halfLength * 0.4 * sin };
+          const lightPos2 = { x: x + halfLength * 0.4 * cos, y: y + halfLength * 0.4 * sin };
+          
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = lightColor1;
+          ctx.fillStyle = lightColor1;
+          const lightProj1 = project3D(lightPos1.x, lightPos1.y, carHeight + 2);
+          ctx.beginPath();
+          ctx.arc(lightProj1.x, lightProj1.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.shadowColor = lightColor2;
+          ctx.fillStyle = lightColor2;
+          const lightProj2 = project3D(lightPos2.x, lightPos2.y, carHeight + 2);
+          ctx.beginPath();
+          ctx.arc(lightProj2.x, lightProj2.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+        
+        // Car outline
+        ctx.strokeStyle = adjustBrightness(color, -40);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(projTopCorners[0].x, projTopCorners[0].y);
+        ctx.lineTo(projTopCorners[1].x, projTopCorners[1].y);
+        ctx.lineTo(projTopCorners[2].x, projTopCorners[2].y);
+        ctx.lineTo(projTopCorners[3].x, projTopCorners[3].y);
+        ctx.closePath();
+        ctx.stroke();
       };
 
-      // Draw NPC cars
+      // Draw NPC cars in 3D
       npcCarsRef.current.forEach(npcCar => {
         if (npcCar.x >= cameraRef.current.x - 50 &&
             npcCar.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50 &&
             npcCar.y >= cameraRef.current.y - 50 &&
             npcCar.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
-          
-          ctx.save();
-          ctx.translate(npcCar.x, npcCar.y);
-          ctx.rotate(npcCar.angle);
-          
-          // Shadow
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-          ctx.fillRect(-14, 10, 28, 8);
-          
-          // Car body
-          ctx.fillStyle = npcCar.color;
-          drawRoundedRect(-18, -10, 36, 20, 4);
-          ctx.fill();
-          
-          // Windows
-          const windowGradient = ctx.createLinearGradient(-12, -6, -12, 2);
-          windowGradient.addColorStop(0, '#87CEEB');
-          windowGradient.addColorStop(1, '#4682B4');
-          ctx.fillStyle = windowGradient;
-          ctx.fillRect(-12, -6, 24, 8);
-          ctx.strokeStyle = '#2c3e50';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(-12, -6, 24, 8);
-          
-          // Wheels
-          ctx.fillStyle = '#1a1a1a';
-          ctx.fillRect(-13, -10, 6, 4);
-          ctx.fillRect(7, -10, 6, 4);
-          ctx.fillRect(-13, 6, 6, 4);
-          ctx.fillRect(7, 6, 6, 4);
-          
-          ctx.restore();
+          draw3DCar(npcCar.x, npcCar.y, npcCar.angle, npcCar.color, false, false);
         }
       });
 
@@ -1864,134 +2161,18 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
         }
       });
 
-      // Draw police cars - enhanced (only those in view)
+      // Draw police cars in 3D (only those in view)
       policeRef.current.forEach(police => {
         // Only draw if police is in camera view
         if (police.x >= cameraRef.current.x - 50 &&
             police.x <= cameraRef.current.x + GAME_CONSTANTS.CANVAS_WIDTH + 50 &&
             police.y >= cameraRef.current.y - 50 &&
             police.y <= cameraRef.current.y + GAME_CONSTANTS.CANVAS_HEIGHT + 50) {
-        ctx.save();
-        ctx.translate(police.x, police.y);
-        ctx.rotate(police.angle);
-        
-        // Shadow
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        ctx.fillRect(-14, 10, 28, 8);
-        
-        // Police car body (main) - enhanced
-        ctx.fillStyle = '#1a4d8c';
-        drawRoundedRect(-18, -10, 36, 20, 4);
-        ctx.fill();
-        
-        // Car details - hood
-        ctx.fillStyle = '#0d3a6b';
-        ctx.fillRect(-18, -10, 36, 6);
-        
-        // White stripe with reflection
-        const stripeGradient = ctx.createLinearGradient(-16, -8, -16, -4);
-        stripeGradient.addColorStop(0, '#ffffff');
-        stripeGradient.addColorStop(1, '#cccccc');
-        ctx.fillStyle = stripeGradient;
-        ctx.fillRect(-16, -8, 32, 4);
-        ctx.fillRect(-16, 4, 32, 4);
-        
-        // Windows with gradient
-        const windowGradient = ctx.createLinearGradient(-12, -6, -12, 2);
-        windowGradient.addColorStop(0, '#b0e0e6');
-        windowGradient.addColorStop(1, '#87ceeb');
-        ctx.fillStyle = windowGradient;
-        ctx.fillRect(-12, -6, 24, 8);
-        ctx.strokeStyle = '#2c3e50';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(-12, -6, 24, 8);
-        
-        // Window divider
-        ctx.strokeStyle = '#2c3e50';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, -6);
-        ctx.lineTo(0, 2);
-        ctx.stroke();
-        
-        // Police lights bar (animated) - enhanced
-        const lightTime = Date.now() % 1000;
-        ctx.shadowBlur = 15;
-        if (lightTime < 500) {
-          ctx.shadowColor = '#ff0000';
-          ctx.fillStyle = '#ff0000';
-          ctx.fillRect(-14, -14, 7, 4);
-          ctx.fillStyle = '#0000ff';
-          ctx.fillRect(7, -14, 7, 4);
-        } else {
-          ctx.shadowColor = '#0000ff';
-          ctx.fillStyle = '#0000ff';
-          ctx.fillRect(7, -14, 7, 4);
-          ctx.fillStyle = '#ff0000';
-          ctx.fillRect(-14, -14, 7, 4);
-        }
-        ctx.shadowBlur = 0;
-        
-        // Enhanced wheels with rotation
-        const wheelRotation = police.speed * 0.5;
-        ctx.save();
-        ctx.translate(-13, -10);
-        ctx.rotate(wheelRotation);
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(-3, -2, 6, 4);
-        ctx.fillStyle = '#666';
-        ctx.fillRect(-2, -1, 4, 2);
-        ctx.restore();
-        
-        ctx.save();
-        ctx.translate(13, -10);
-        ctx.rotate(wheelRotation);
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(-3, -2, 6, 4);
-        ctx.fillStyle = '#666';
-        ctx.fillRect(-2, -1, 4, 2);
-        ctx.restore();
-        
-        ctx.save();
-        ctx.translate(-13, 10);
-        ctx.rotate(wheelRotation);
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(-3, -2, 6, 4);
-        ctx.fillStyle = '#666';
-        ctx.fillRect(-2, -1, 4, 2);
-        ctx.restore();
-        
-        ctx.save();
-        ctx.translate(13, 10);
-        ctx.rotate(wheelRotation);
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(-3, -2, 6, 4);
-        ctx.fillStyle = '#666';
-        ctx.fillRect(-2, -1, 4, 2);
-        ctx.restore();
-        
-        // Headlights
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = '#ffffff';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-18, -4, 3, 3);
-        ctx.fillRect(15, -4, 3, 3);
-        ctx.shadowBlur = 0;
-        
-        // Taillights
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(-18, 1, 3, 3);
-        ctx.fillRect(15, 1, 3, 3);
-        
-        ctx.restore();
+          draw3DCar(police.x, police.y, police.angle, '#1a4d8c', true, false);
         }
       });
 
-      // Draw player car with boost effect
-      ctx.save();
-      ctx.translate(player.x, player.y);
-      ctx.rotate(player.angle);
-      
+      // Draw player car in 3D with boost effect
       // Boost glow effect
       if (player.boostActive) {
         const boostPulse = Math.sin(Date.now() / 100) * 0.3 + 0.7;
@@ -2003,110 +2184,19 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
           ctx.strokeStyle = `rgba(0, 255, 0, ${0.3 * boostPulse / (i + 1)})`;
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(0, 0, 25 + i * 5, 0, Math.PI * 2);
+          const glowProj = project3D(player.x, player.y, 0);
+          ctx.arc(glowProj.x, glowProj.y, 25 + i * 5, 0, Math.PI * 2);
           ctx.stroke();
         }
         ctx.shadowBlur = 0;
       }
       
-      // Shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-      ctx.fillRect(-14, 10, 28, 8);
-      
-      // Player car body (main) - enhanced
-      ctx.fillStyle = player.boostActive ? '#ff4444' : '#c0392b';
-      drawRoundedRect(-18, -10, 36, 20, 4);
-      ctx.fill();
-      
-      // Car details - hood with gradient effect
-      ctx.fillStyle = player.boostActive ? '#cc3333' : '#a93226';
-      ctx.fillRect(-18, -10, 36, 6);
-      
-      // Racing stripe (when boosted)
-      if (player.boostActive) {
-        ctx.fillStyle = '#ffff00';
-        ctx.fillRect(-2, -10, 4, 20);
-      }
-      
-      // Windows with reflection
-      const gradient = ctx.createLinearGradient(-12, -6, -12, 2);
-      gradient.addColorStop(0, '#5dade2');
-      gradient.addColorStop(1, '#3498db');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(-12, -6, 24, 8);
-      ctx.strokeStyle = '#2c3e50';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(-12, -6, 24, 8);
-      
-      // Window divider
-      ctx.strokeStyle = '#2c3e50';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, -6);
-      ctx.lineTo(0, 2);
-      ctx.stroke();
-      
-      // Enhanced wheels with rotation effect
-      const wheelRotation = player.speed * 0.5;
-      ctx.save();
-      ctx.translate(-13, -10);
-      ctx.rotate(wheelRotation);
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(-3, -2, 6, 4);
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(-2, -1, 4, 2);
-      ctx.restore();
-      
-      ctx.save();
-      ctx.translate(13, -10);
-      ctx.rotate(wheelRotation);
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(-3, -2, 6, 4);
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(-2, -1, 4, 2);
-      ctx.restore();
-      
-      ctx.save();
-      ctx.translate(-13, 10);
-      ctx.rotate(wheelRotation);
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(-3, -2, 6, 4);
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(-2, -1, 4, 2);
-      ctx.restore();
-      
-      ctx.save();
-      ctx.translate(13, 10);
-      ctx.rotate(wheelRotation);
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(-3, -2, 6, 4);
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(-2, -1, 4, 2);
-      ctx.restore();
-      
-      // Enhanced headlights with glow
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = '#fffacd';
-      ctx.fillStyle = '#fffacd';
-      ctx.fillRect(-18, -4, 3, 3);
-      ctx.fillRect(15, -4, 3, 3);
-      ctx.shadowBlur = 0;
-      
-      // Taillights
-      ctx.fillStyle = '#ff0000';
-      ctx.fillRect(-18, 1, 3, 3);
-      ctx.fillRect(15, 1, 3, 3);
+      // Draw player car in 3D
+      const playerColor = player.boostActive ? '#ff4444' : '#c0392b';
+      draw3DCar(player.x, player.y, player.angle, playerColor, false, true);
       
       // Exhaust effect when boosting
       if (player.boostActive && player.speed > 0) {
-        ctx.fillStyle = '#ff6600';
-        ctx.fillRect(-20, 2, 4, 2);
-        ctx.fillRect(16, 2, 4, 2);
-        ctx.fillStyle = '#ffaa00';
-        ctx.fillRect(-22, 3, 3, 1);
-        ctx.fillRect(17, 3, 3, 1);
-        
-        // Add exhaust particles
         if (Math.random() < 0.3) {
           particlesRef.current.push({
             x: player.x - Math.cos(player.angle) * 20,
@@ -2118,8 +2208,6 @@ function ChaseGame({ onClose, onGameEnd }: ChaseGameProps) {
           });
         }
       }
-      
-      ctx.restore();
 
       // Restore camera transform
       ctx.restore();
